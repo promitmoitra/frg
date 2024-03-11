@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+#edf data file
+*.edf
+#channel location file
+*.ced
+
 # Distribution / packaging
 .Python
 build/

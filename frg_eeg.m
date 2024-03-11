@@ -1,27 +1,27 @@
-
 %% Foraging EEG analysis:
 clear;clc;eeglab;close;
-data_path = '/home/decision_lab/work/frg/foraging/Neuroflow/';
-badids = [37532 38058 39862 42125 43543 45194 46037 47678 47744 47801 48238 48278];
-%%% badids are [37532 38058 39862 42125 43543 '45194' 46037 '47678' 47744 47801 48238 48278];
-subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
-%%% sub 47801 has no poststress long travel time markers TRIGGER EVENT U
-
-subid = subids(subids==7873);
+% data_path = '/home/decision_lab/work/frg/foraging/Neuroflow/';
+% badids = [37532 38058 39862 42125 43543 45194 46037 47678 47744 47801 48238 48278];
+% %%% badids are [37532 38058 39862 42125 43543 '45194' 46037 '47678' 47744 47801 48238 48278];
+% subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
+% %%% sub 47801 has no poststress long travel time markers TRIGGER EVENT U
+% 
+% subid = subids(subids==7873);
 
 %%% Main loop
 % for idx = 1:length(subids)
 % clearvars -except idx subids data_path
 % subid = subids(idx);disp(subid);
+% data_file = dir(fullfile(data_path,string(subid),'*EEG','*.edf'));
+% data_file_path = fullfile(data_file(end).folder,data_file(end).name);
 
-data_file = dir(fullfile(data_path,string(subid),'*EEG','*.edf'));
-data_file_path = fullfile(data_file(end).folder,data_file(end).name);
+data_file_path = '/MATLAB Drive/data/7873.edf';
 EEG = pop_biosig(data_file_path,'channels',1:19);
 
 %%% Load data, rereference, seperate pre and post stress blocks:
 EEG = pop_select(EEG,'nochannel',10);EEG.data(end+1,:) = 0;EEG.nbchan = size(EEG.data,1);
-EEG = pop_chanedit(EEG,'load','/home/decision_lab/work/frg/foraging/Samples/Statnet_F3F4FCz.ced');
-origchanlocs = readlocs('/home/decision_lab/work/frg/foraging/Samples/Statnet_F3F4FCz.ced');
+EEG = pop_chanedit(EEG,'load','/MATLAB Drive/data/Statnet_F3F4FCz.ced');
+origchanlocs = readlocs('/MATLAB Drive/data/Statnet_F3F4FCz.ced');
 
 EEG = pop_reref(EEG,19);EEG = pop_reref(EEG,[2 5]);
 
