@@ -15,13 +15,13 @@ clear;clc;eeglab;close;
 % data_file = dir(fullfile(data_path,string(subid),'*EEG','*.edf'));
 % data_file_path = fullfile(data_file(end).folder,data_file(end).name);
 
-data_file_path = '/MATLAB Drive/data/7873.edf';
+data_file_path = './data/7873.edf';
 EEG = pop_biosig(data_file_path,'channels',1:19);
 
 %%% Load data, rereference, seperate pre and post stress blocks:
 EEG = pop_select(EEG,'nochannel',10);EEG.data(end+1,:) = 0;EEG.nbchan = size(EEG.data,1);
-EEG = pop_chanedit(EEG,'load','/MATLAB Drive/data/Statnet_F3F4FCz.ced');
-origchanlocs = readlocs('/MATLAB Drive/data/Statnet_F3F4FCz.ced');
+EEG = pop_chanedit(EEG,'load','./data/Statnet_F3F4FCz.ced');
+origchanlocs = readlocs('./data/Statnet_F3F4FCz.ced');
 
 EEG = pop_reref(EEG,19);EEG = pop_reref(EEG,[2 5]);
 
@@ -290,14 +290,25 @@ fooof_poststim = cell2mat(preEEG_epoch_poststim.etc.FOOOF_results);
 preEEG_epoch_postresp = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[1 2]*1000,100,freqs,...
                          struct('peak_width_limits',[2 10]));
 fooof_postresp = cell2mat(preEEG_epoch_postresp.etc.FOOOF_results);
+fooof_results = [fooof_prestim fooof_poststim fooof_postresp];
+%%
+ch_idx = 3; %1:EEG.nbchan
+figure('Name',EEG.chanlocs(ch_idx).labels);hold on;
+p1 = plot(fooof_results(ch_idx,1).freqs,10.^(fooof_results(ch_idx,1).fooofed_spectrum),'DisplayName','[-2 0] ms','LineWidth',2,'Color',"#0072BD");
+plot(fooof_results(ch_idx,1).freqs,10.^(fooof_results(ch_idx,1).ap_fit),'LineWidth',1,'LineStyle','--','Color',p1.Color);
+p2 = plot(fooof_results(ch_idx,2).freqs,10.^(fooof_results(ch_idx,2).fooofed_spectrum),'DisplayName','[0 +1] ms','LineWidth',2,'Color',"#D95319");
+plot(fooof_results(ch_idx,2).freqs,10.^(fooof_results(ch_idx,2).ap_fit),'LineWidth',2,'LineStyle','--','Color',p2.Color);
+p3 = plot(fooof_results(ch_idx,3).freqs,10.^(fooof_results(ch_idx,3).fooofed_spectrum),'DisplayName','[+1 +2] ms','LineWidth',2,'Color',"#EDB120");
+plot(fooof_results(ch_idx,3).freqs,10.^(fooof_results(ch_idx,3).ap_fit),'LineWidth',2,'LineStyle','--','Color',p3.Color);
+[v,l] = max([size(fooof_prestim(ch_idx).peak_params,1),size(fooof_poststim(ch_idx).peak_params,1),size(fooof_postresp(ch_idx).peak_params,1)]);
 
-idx = 3; %1:EEG.nbchan
-figure('Name',EEG.chanlocs(idx).labels);hold on;
-plot(log10(fooof_prestim(idx).freqs),fooof_prestim(idx).fooofed_spectrum)
-plot(log10(fooof_poststim(idx).freqs),fooof_poststim(idx).fooofed_spectrum)
-plot(log10(fooof_postresp(idx).freqs),fooof_postresp(idx).fooofed_spectrum)
-%     fooof_plot(fooof_poststim(idx),true,false)
+ax=gca;ax.XScale='linear';ax.YScale='log';
+xlabels=[4 8 12 20 30 40 60];xticks(xlabels);xticklabels(cellstr(num2str(xlabels(:))));
+fmark = xline(xlabels,'LineStyle',':','Color','k');
+yticklabels(cellstr(num2str(ax.YTick(:),'%.2f')));
 
+xlabel('Frequency (Hz)');ylabel('PSD (\muV^2/Hz)')
+title(EEG.chanlocs(ch_idx).labels);legend([p1,p2,p3]);
 % end
 
 %% Dataframes for EEGNet and HDDM:
