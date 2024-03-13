@@ -247,38 +247,38 @@ postEEG_epoch = pop_epoch(postEEG,lock_event,epoch_trange);
 % close;
 
 % % Time-Frequency plots (newtimef - relative to condition (left (stay1) or right (leave) alligned))
-% epoch_data = preEEG_epoch; stress_flag = 'pre';
-% % epoch_data = postEEG_epoch; stress_flag = 'post';
+epoch_data = preEEG_epoch; stress_flag = 'pre';
+% epoch_data = postEEG_epoch; stress_flag = 'post';
 % freq_rng = [1 50];
 % chan = 'CZ';chan_idx = find(strcmp({EEG.chanlocs.labels},{chan}));
 % caption_txt = char(strcat(string(subid),'_',stress_flag,'-stress_', ...
 %               lock_flag,'-locked_',chan));
-% 
-% leave_trial_idx = get_leave_idx(epoch_data);
-% %%% get_leave_idx is called again inside the loop because first idx is set 
-% %%% to 0 manually, to calculate the min_stay_len.
-% first_stay_idx = [1 leave_trial_idx(1:end-1)+1];
-% leave_trial_idx(2:end+1)=leave_trial_idx(1:end); leave_trial_idx(1)=0;
-% min_stay_len = min(min(diff(leave_trial_idx)-1),4); 
-% %%% By default, plot from leave-4 to leave, unless there's a patch with 
-% %%% less than 3 stay trials
-% 
-% for i = min_stay_len:-1:0
-%     leave_trial_idx = get_leave_idx(epoch_data);
-% %     first_stay_data = epoch_data.data(chan_idx,:,first_stay_idx); cond = 'Stay 1';
-%     leave_data = epoch_data.data(chan_idx,:,leave_trial_idx); cond = 'Leave';
-% 
-% %     stay_alligned_data = epoch_data.data(chan_idx,:,first_stay_idx+i); fig_title = {[strcat('Stay 1 + ',string(i))],cond};
-%     leave_alligned_data = epoch_data.data(chan_idx,:,leave_trial_idx-i); fig_title = {[strcat('Leave - ',string(i))],cond};
-% 
+
+leave_trial_idx = get_leave_idx(epoch_data);
+%%% get_leave_idx is called again inside the loop because first idx is set 
+%%% to 0 manually, to calculate the min_stay_len.
+first_stay_idx = [1 leave_trial_idx(1:end-1)+1];
+leave_trial_idx(2:end+1)=leave_trial_idx(1:end); leave_trial_idx(1)=0;
+min_stay_len = min(min(diff(leave_trial_idx)-1),4); 
+%%% By default, plot from leave-4 to leave, unless there's a patch with 
+%%% less than 3 stay trials
+
+for i = min_stay_len:-1:0
+    leave_trial_idx = get_leave_idx(epoch_data);
+    first_stay_data = epoch_data.data(chan_idx,:,first_stay_idx); %cond = 'Stay 1';
+    leave_data = epoch_data.data(chan_idx,:,leave_trial_idx); %cond = 'Leave';
+
+    stay_alligned_data = epoch_data.data(chan_idx,:,first_stay_idx+i); %fig_title = {[strcat('Stay 1 + ',string(i))],cond};
+    leave_alligned_data = epoch_data.data(chan_idx,:,leave_trial_idx-i); %fig_title = {[strcat('Leave - ',string(i))],cond};
+
 %     [ersp,itc,powbase,times,freqs,erspboot,itcboot,tfdata] =...
 %     newtimef({leave_alligned_data leave_data},size(leave_data,2),...
 %               epoch_trange*1000,preEEG_epoch.srate,[3 0.5],...
 %               'plotitc','off',...
 %               'title',fig_title,'caption',caption_txt,...
 %               'scale','abs','baseline',NaN,'basenorm','off','commonbase','off','trialbase','off');
-% end
-
+end
+%%
 preEEG_epoch_prestim = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[-2 0]*1000,100,freqs,...
                          struct('peak_width_limits',[2 10]));
 fooof_prestim = cell2mat(preEEG_epoch_prestim.etc.FOOOF_results);
@@ -292,19 +292,25 @@ preEEG_epoch_postresp = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[1 2]*10
 fooof_postresp = cell2mat(preEEG_epoch_postresp.etc.FOOOF_results);
 fooof_results = [fooof_prestim fooof_poststim fooof_postresp];
 %%
-ch_idx = 3; %1:EEG.nbchan
+ch_idx = 3; %1:EEG.nbchan [9 10 11 13]
+peak_data = {fooof_results(3,:).peak_params};
+
 figure('Name',EEG.chanlocs(ch_idx).labels);hold on;
 p1 = plot(fooof_results(ch_idx,1).freqs,10.^(fooof_results(ch_idx,1).fooofed_spectrum),'DisplayName','[-2 0] ms','LineWidth',2,'Color',"#0072BD");
 plot(fooof_results(ch_idx,1).freqs,10.^(fooof_results(ch_idx,1).ap_fit),'LineWidth',1,'LineStyle','--','Color',p1.Color);
+xline(peak_data{1}(:,1),'LineStyle',':','Color',p1.Color,'LineWidth',2);
+
 p2 = plot(fooof_results(ch_idx,2).freqs,10.^(fooof_results(ch_idx,2).fooofed_spectrum),'DisplayName','[0 +1] ms','LineWidth',2,'Color',"#D95319");
 plot(fooof_results(ch_idx,2).freqs,10.^(fooof_results(ch_idx,2).ap_fit),'LineWidth',2,'LineStyle','--','Color',p2.Color);
+xline(peak_data{2}(:,1),'LineStyle',':','Color',p2.Color,'LineWidth',2);
+
 p3 = plot(fooof_results(ch_idx,3).freqs,10.^(fooof_results(ch_idx,3).fooofed_spectrum),'DisplayName','[+1 +2] ms','LineWidth',2,'Color',"#EDB120");
 plot(fooof_results(ch_idx,3).freqs,10.^(fooof_results(ch_idx,3).ap_fit),'LineWidth',2,'LineStyle','--','Color',p3.Color);
-[v,l] = max([size(fooof_prestim(ch_idx).peak_params,1),size(fooof_poststim(ch_idx).peak_params,1),size(fooof_postresp(ch_idx).peak_params,1)]);
+xline(peak_data{3}(:,1),'LineStyle',':','Color',p3.Color,'LineWidth',2);
 
-ax=gca;ax.XScale='linear';ax.YScale='log';
-xlabels=[4 8 12 20 30 40 60];xticks(xlabels);xticklabels(cellstr(num2str(xlabels(:))));
-fmark = xline(xlabels,'LineStyle',':','Color','k');
+ax=gca;ax.XScale='log';ax.YScale='log';
+fmarks=cell2mat(peak_data(:));fmarks=sort(fmarks(:,1));fdiff=diff(fmarks);
+fmarks(fdiff<1)=[];xticks(fmarks);xticklabels(cellstr(num2str(fmarks(:),'%.1f')));
 yticklabels(cellstr(num2str(ax.YTick(:),'%.2f')));
 
 xlabel('Frequency (Hz)');ylabel('PSD (\muV^2/Hz)')
@@ -323,17 +329,17 @@ title(EEG.chanlocs(ch_idx).labels);legend([p1,p2,p3]);
 % end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%==Function Definitions==%%%%%%%%%%%%%%%%%%%%%%%%%
-% function leave_idx = get_leave_idx(ep_dat)
-%     leave_idx = []; 
-%     trigger_events = {'TRIGGER EVENT R'};
-%     for i = 1:ep_dat.trials
-%         trial_events = ep_dat.epoch(i).eventtype;
-%         [~,event_idx] = ismember(trial_events,trigger_events);
-%         if ismember(1,event_idx)
-%             leave_idx(end+1) = i;
-%         end
-%     end
-% end    
+function leave_idx = get_leave_idx(ep_dat)
+    leave_idx = []; 
+    trigger_events = {'TRIGGER EVENT R'};
+    for i = 1:ep_dat.trials
+        trial_events = ep_dat.epoch(i).eventtype;
+        [~,event_idx] = ismember(trial_events,trigger_events);
+        if ismember(1,event_idx)
+            leave_idx(end+1) = i;
+        end
+    end
+end    
 % 
 % function [x,y,y_fit,ph,lh,pl,ll,trange] = fit_erp(epoch_data,init_time,fin_time)
 %     init_idx = find(epoch_data.times==init_time);
