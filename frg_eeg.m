@@ -247,38 +247,57 @@ postEEG_epoch = pop_epoch(postEEG,lock_event,epoch_trange);
 % close;
 
 % % Time-Frequency plots (newtimef - relative to condition (left (stay1) or right (leave) alligned))
-epoch_data = preEEG_epoch; stress_flag = 'pre';
+% epoch_data = preEEG_epoch; stress_flag = 'pre';
 % epoch_data = postEEG_epoch; stress_flag = 'post';
 % freq_rng = [1 50];
 % chan = 'CZ';chan_idx = find(strcmp({EEG.chanlocs.labels},{chan}));
 % caption_txt = char(strcat(string(subid),'_',stress_flag,'-stress_', ...
 %               lock_flag,'-locked_',chan));
-
-leave_trial_idx = get_leave_idx(epoch_data);
+% 
+% leave_trial_idx = get_leave_idx(epoch_data);
 %%% get_leave_idx is called again inside the loop because first idx is set 
 %%% to 0 manually, to calculate the min_stay_len.
-first_stay_idx = [1 leave_trial_idx(1:end-1)+1];
-leave_trial_idx(2:end+1)=leave_trial_idx(1:end); leave_trial_idx(1)=0;
-min_stay_len = min(min(diff(leave_trial_idx)-1),4); 
+% first_stay_idx = [1 leave_trial_idx(1:end-1)+1];
+% leave_trial_idx(2:end+1)=leave_trial_idx(1:end); leave_trial_idx(1)=0;
+% min_stay_len = min(min(diff(leave_trial_idx)-1),4); 
 %%% By default, plot from leave-4 to leave, unless there's a patch with 
 %%% less than 3 stay trials
-
-for i = min_stay_len:-1:0
-    leave_trial_idx = get_leave_idx(epoch_data);
-    first_stay_data = epoch_data.data(chan_idx,:,first_stay_idx); %cond = 'Stay 1';
-    leave_data = epoch_data.data(chan_idx,:,leave_trial_idx); %cond = 'Leave';
-
-    stay_alligned_data = epoch_data.data(chan_idx,:,first_stay_idx+i); %fig_title = {[strcat('Stay 1 + ',string(i))],cond};
-    leave_alligned_data = epoch_data.data(chan_idx,:,leave_trial_idx-i); %fig_title = {[strcat('Leave - ',string(i))],cond};
-
+%
+% for i = min_stay_len:-1:0
+%     leave_trial_idx = get_leave_idx(epoch_data);
+%     first_stay_data = epoch_data.data(chan_idx,:,first_stay_idx); %cond = 'Stay 1';
+%     leave_data = epoch_data.data(chan_idx,:,leave_trial_idx); %cond = 'Leave';
+% 
+%     stay_alligned_data = epoch_data.data(chan_idx,:,first_stay_idx+i); %fig_title = {[strcat('Stay 1 + ',string(i))],cond};
+%     leave_alligned_data = epoch_data.data(chan_idx,:,leave_trial_idx-i); %fig_title = {[strcat('Leave - ',string(i))],cond};
+% 
 %     [ersp,itc,powbase,times,freqs,erspboot,itcboot,tfdata] =...
 %     newtimef({leave_alligned_data leave_data},size(leave_data,2),...
 %               epoch_trange*1000,preEEG_epoch.srate,[3 0.5],...
 %               'plotitc','off',...
 %               'title',fig_title,'caption',caption_txt,...
 %               'scale','abs','baseline',NaN,'basenorm','off','commonbase','off','trialbase','off');
-end
+% end
+
 %%
+epoch_data = preEEG_epoch; stress_flag = 'pre';
+% epoch_data = postEEG_epoch; stress_flag = 'post';
+chan = 'CZ';chan_idx = find(strcmp({EEG.chanlocs.labels},{chan}));
+
+leave_trial_idx=get_leave_idx(epoch_data);
+first_stay_idx=[1 leave_trial_idx(1:end-1)+1];
+leave_trial_idx(2:end+1)=leave_trial_idx(1:end);leave_trial_idx(1)=0;
+min_stay_len = min(min(diff(leave_trial_idx)-1),4);
+
+for i = min_stay_len:-1:0
+    leave_trial_idx = get_leave_idx(epoch_data);
+    first_stay_data = epoch_data.data(chan_idx,:,first_stay_idx);
+    leave_data = epoch_data.data(chan_idx,:,leave_trial_idx);
+
+    stay_alligned_data = epoch_data.data(chan_idx,:,first_stay_idx+i);
+    leave_alligned_data = epoch_data.data(chan_idx,:,leave_trial_idx-i);
+end
+
 preEEG_epoch_prestim = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[-2 0]*1000,100,freqs,...
                          struct('peak_width_limits',[2 10]));
 fooof_prestim = cell2mat(preEEG_epoch_prestim.etc.FOOOF_results);
@@ -292,7 +311,7 @@ preEEG_epoch_postresp = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[1 2]*10
 fooof_postresp = cell2mat(preEEG_epoch_postresp.etc.FOOOF_results);
 fooof_results = [fooof_prestim fooof_poststim fooof_postresp];
 %%
-ch_idx = 3; %1:EEG.nbchan [9 10 11 13]
+ch_idx = 14; %1:EEG.nbchan [9 10 11 13]
 peak_data = {fooof_results(3,:).peak_params};
 
 figure('Name',EEG.chanlocs(ch_idx).labels);hold on;
@@ -308,7 +327,7 @@ p3 = plot(fooof_results(ch_idx,3).freqs,10.^(fooof_results(ch_idx,3).fooofed_spe
 plot(fooof_results(ch_idx,3).freqs,10.^(fooof_results(ch_idx,3).ap_fit),'LineWidth',2,'LineStyle','--','Color',p3.Color);
 xline(peak_data{3}(:,1),'LineStyle',':','Color',p3.Color,'LineWidth',2);
 
-ax=gca;ax.XScale='log';ax.YScale='log';
+ax=gca;ax.XScale='linear';ax.YScale='log';
 fmarks=cell2mat(peak_data(:));fmarks=sort(fmarks(:,1));fdiff=diff(fmarks);
 fmarks(fdiff<1)=[];xticks(fmarks);xticklabels(cellstr(num2str(fmarks(:),'%.1f')));
 yticklabels(cellstr(num2str(ax.YTick(:),'%.2f')));
