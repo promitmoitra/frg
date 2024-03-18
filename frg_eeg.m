@@ -143,7 +143,7 @@ postEEG = pop_firws(postEEG,'wtype',wtype,'ftype','bandpass','fcutoff',freqs,'fo
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% % Epoch locked to stimulus (Trigger Event N) or response (Trigger Events [O, R]):
+%% Epoch locked to stimulus (Trigger Event N) or response (Trigger Events [O, R]):
 channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));
 
 % channel = 'C3';c3_idx = find(strcmp({EEG.chanlocs.labels},{channel}));
@@ -154,7 +154,7 @@ channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));
 % chan_set = [fp1_idx fp2_idx];
 
 lock_event = {'TRIGGER EVENT N'}; lock_flag = 'stim'; 
-epoch_trange = [-2 2]; %baseline = [-1 0]*1000;
+epoch_trange = [-1 2]; %baseline = [-1 0]*1000;
 
 % lock_event = {'TRIGGER EVENT O','TRIGGER EVENT R'}; lock_flag = 'resp';
 % epoch_trange = [-2 1]; resp_baseline = [-2 -1]*1000;
@@ -197,7 +197,7 @@ postEEG_epoch = pop_epoch(postEEG,lock_event,epoch_trange);
 % % close;
 % % end
 
-% % Time-Frequency plots (erpimage - single frequency multi channel):
+% % ERP plots (erpimage - single frequency multi channel):
 % freq_rng = [15 30];
 % figure('Position', [10 10 900 600]); 
 % epoch_data = preEEG_epoch; stress_flag = 'pre';
@@ -288,58 +288,76 @@ chan_idx = cz_idx;
 %calculate min stay length (or max and nan pad)
 leave_trial_idx=get_leave_idx(epoch_data);
 first_stay_idx=[1 leave_trial_idx(1:end-1)+1];
+
+patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idx,leave_trial_idx,'UniformOutput',false);
+patch1
+epoch_data.data = epoch_data.data(:,:,patch_trial_idxs{1});
+leave_trial_idx=get_leave_idx(epoch_data);
+first_stay_idx=[1 leave_trial_idx(1:end-1)+1];
+
 leave_trial_idx(2:end+1)=leave_trial_idx(1:end);leave_trial_idx(1)=0;
-min_stay_len = min(min(diff(leave_trial_idx)-1),4);
+min_stay_len = min(min(diff(leave_trial_idx)-1),6);
 
 leave_trial_idx = get_leave_idx(epoch_data);
 leave = epoch_data;
 leave.data=epoch_data.data(:,:,leave_trial_idx);
-for idx = min_stay_len:-1:0
-    eval(strcat('stay',num2str(idx+1),'= epoch_data;'));
-    eval(strcat('stay',num2str(idx+1),'.data=epoch_data.data(:,:,first_stay_idx+idx);'));
+for idx = 0:min_stay_len
+    if idx~=0
+        eval(strcat('stay_',num2str(idx+1),'= epoch_data;'));
+        eval(strcat('stay_',num2str(idx+1),'.data=epoch_data.data(:,:,first_stay_idx+idx);'));
+    end
+    eval(strcat('leave_',num2str(idx),'= epoch_data;'));
+    eval(strcat('leave_',num2str(idx),'.data=epoch_data.data(:,:,leave_trial_idx-idx);'));
     %would ideally need to update .epoch, .event and .trials
-    % leave_alligned_data = epoch_data.data(chan_idx,:,leave_trial_idx-idx);
 end
 %%
-fooof_settings = struct('peak_width_limits',[2 10]);
+fooof_settings = struct('peak_width_limits',[4 10]);
 figure('Name',EEG.chanlocs(chan_idx).labels);hold on;
-for idx=1:min_stay_len+1
-    eval(strcat('prestim = eeg_fooof(stay',num2str(idx),',"channel",[1:EEG.nbchan],[-2 0]*1000,100,freqs,fooof_settings);'))
-    fooof_prestim = cell2mat(prestim.etc.FOOOF_results);
-    p1 = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat('Stay ',num2str(idx)),'LineWidth',2,'Color',"#0072BD");
-    plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'LineWidth',1,'LineStyle','--','Color',p1.Color);
-    xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',p1.Color,'LineWidth',2);
+c=sky(min_stay_len+1);
+for idx=1%min_stay_len+1
+    eval(strcat('stay_alligned_prestim = eeg_fooof(stay_',num2str(idx),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
+    fooof_prestim = cell2mat(stay_alligned_prestim.etc.FOOOF_results);
+    plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat('Stay ',num2str(idx)),'LineWidth',2,'LineStyle','-','Color',c(idx,:));
+    % plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat('Stay ',num2str(idx),' fit'),'LineWidth',3,'LineStyle','--','Color',c(end-idx+1,:));
+    % xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',%p1.Color,'LineWidth',2);
 end
-hold off; legend;
+for idx=1
+    eval(strcat('leave_alligned_prestim = eeg_fooof(leave_',num2str(min_stay_len-idx+1),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
+    fooof_prestim = cell2mat(leave_alligned_prestim.etc.FOOOF_results);
+    plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat('Leave - ',num2str(min_stay_len-idx+1)),'LineWidth',2,'LineStyle',':','Color',c(idx,:));
+    % plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat('Leave - ',num2str(idx-1),' fit'),'LineWidth',3,'LineStyle',':','Color',c(idx,:));
+    % xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',%p1.Color,'LineWidth',2);
+end
+legend; ax=gca;ax.XScale='linear';ax.YScale='log'; hold off;
 %%
-poststim = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[0 1]*1000,100,freqs,fooof_settings);
-fooof_poststim = cell2mat(poststim.etc.FOOOF_results);
-postresp = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[1 2]*1000,100,freqs,fooof_settings);
-fooof_postresp = cell2mat(postresp.etc.FOOOF_results);
-fooof_results = [fooof_prestim fooof_poststim fooof_postresp];
-peak_data = {fooof_results(3,:).peak_params};
-%%
-figure('Name',EEG.chanlocs(chan_idx).labels);hold on;
-p1 = plot(fooof_results(chan_idx,1).freqs,10.^(fooof_results(chan_idx,1).fooofed_spectrum),'DisplayName','[-2 0] ms','LineWidth',2,'Color',"#0072BD");
-plot(fooof_results(chan_idx,1).freqs,10.^(fooof_results(chan_idx,1).ap_fit),'LineWidth',1,'LineStyle','--','Color',p1.Color);
-xline(peak_data{1}(:,1),'LineStyle',':','Color',p1.Color,'LineWidth',2);
-
-p2 = plot(fooof_results(chan_idx,2).freqs,10.^(fooof_results(chan_idx,2).fooofed_spectrum),'DisplayName','[0 +1] ms','LineWidth',2,'Color',"#D95319");
-plot(fooof_results(chan_idx,2).freqs,10.^(fooof_results(chan_idx,2).ap_fit),'LineWidth',2,'LineStyle','--','Color',p2.Color);
-xline(peak_data{2}(:,1),'LineStyle',':','Color',p2.Color,'LineWidth',2);
-
-p3 = plot(fooof_results(chan_idx,3).freqs,10.^(fooof_results(chan_idx,3).fooofed_spectrum),'DisplayName','[+1 +2] ms','LineWidth',2,'Color',"#EDB120");
-plot(fooof_results(chan_idx,3).freqs,10.^(fooof_results(chan_idx,3).ap_fit),'LineWidth',2,'LineStyle','--','Color',p3.Color);
-xline(peak_data{3}(:,1),'LineStyle',':','Color',p3.Color,'LineWidth',2);
-
-ax=gca;ax.XScale='linear';ax.YScale='log';
-fmarks=cell2mat(peak_data(:));fmarks=sort(fmarks(:,1));fdiff=diff(fmarks);
-fmarks(fdiff<1)=[];xticks(fmarks);xticklabels(cellstr(num2str(fmarks(:),'%.1f')));
-yticklabels(cellstr(num2str(ax.YTick(:),'%.2f')));
-
-xlabel('Frequency (Hz)');ylabel('PSD (\muV^2/Hz)')
-title(EEG.chanlocs(chan_idx).labels);legend([p1,p2,p3]);
-% end
+% poststim = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[0 1]*1000,100,freqs,fooof_settings);
+% fooof_poststim = cell2mat(poststim.etc.FOOOF_results);
+% postresp = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[1 2]*1000,100,freqs,fooof_settings);
+% fooof_postresp = cell2mat(postresp.etc.FOOOF_results);
+% fooof_results = [fooof_prestim fooof_poststim fooof_postresp];
+% peak_data = {fooof_results(3,:).peak_params};
+% %%
+% figure('Name',EEG.chanlocs(chan_idx).labels);hold on;
+% p1 = plot(fooof_results(chan_idx,1).freqs,10.^(fooof_results(chan_idx,1).fooofed_spectrum),'DisplayName','[-2 0] ms','LineWidth',2,'Color',"#0072BD");
+% plot(fooof_results(chan_idx,1).freqs,10.^(fooof_results(chan_idx,1).ap_fit),'LineWidth',1,'LineStyle','--','Color',p1.Color);
+% xline(peak_data{1}(:,1),'LineStyle',':','Color',p1.Color,'LineWidth',2);
+% 
+% p2 = plot(fooof_results(chan_idx,2).freqs,10.^(fooof_results(chan_idx,2).fooofed_spectrum),'DisplayName','[0 +1] ms','LineWidth',2,'Color',"#D95319");
+% plot(fooof_results(chan_idx,2).freqs,10.^(fooof_results(chan_idx,2).ap_fit),'LineWidth',2,'LineStyle','--','Color',p2.Color);
+% xline(peak_data{2}(:,1),'LineStyle',':','Color',p2.Color,'LineWidth',2);
+% 
+% p3 = plot(fooof_results(chan_idx,3).freqs,10.^(fooof_results(chan_idx,3).fooofed_spectrum),'DisplayName','[+1 +2] ms','LineWidth',2,'Color',"#EDB120");
+% plot(fooof_results(chan_idx,3).freqs,10.^(fooof_results(chan_idx,3).ap_fit),'LineWidth',2,'LineStyle','--','Color',p3.Color);
+% xline(peak_data{3}(:,1),'LineStyle',':','Color',p3.Color,'LineWidth',2);
+% 
+% ax=gca;ax.XScale='linear';ax.YScale='log';
+% fmarks=cell2mat(peak_data(:));fmarks=sort(fmarks(:,1));fdiff=diff(fmarks);
+% fmarks(fdiff<1)=[];xticks(fmarks);xticklabels(cellstr(num2str(fmarks(:),'%.1f')));
+% yticklabels(cellstr(num2str(ax.YTick(:),'%.2f')));
+% 
+% xlabel('Frequency (Hz)');ylabel('PSD (\muV^2/Hz)')
+% title(EEG.chanlocs(chan_idx).labels);legend([p1,p2,p3]);
+% % end
 %% Dataframes for EEGNet and HDDM:
 % save(strcat('/home/decision_lab/work/eegnet/arl-eegmodels/',str(subid),'_pre.mat'),'-struct','preEEG_epoch')
 % save(strcat('/home/decision_lab/work/eegnet/arl-eegmodels/',str(subid),'_post.mat'),'-struct','postEEG_epoch')
