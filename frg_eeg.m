@@ -1,5 +1,7 @@
 %% Foraging EEG analysis:
+cd 'C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1';
 clear;clc;eeglab;close;
+cd 'C:\Users\promitmoitra\Documents\GitHub\frg\'
 % data_path = '/home/decision_lab/work/frg/foraging/Neuroflow/';
 % badids = [37532 38058 39862 42125 43543 45194 46037 47678 47744 47801 48238 48278];
 % %%% badids are [37532 38058 39862 42125 43543 '45194' 46037 '47678' 47744 47801 48238 48278];
@@ -284,44 +286,47 @@ epoch_data = preEEG_epoch; stress_flag = 'pre';
 % epoch_data = postEEG_epoch; stress_flag = 'post';
 chan_idx = cz_idx;
 
-%stay allignment: stay1, stay2, ..., leave 
+%stay allignment: first_stay_idx+idx | leave allignment: leave_trial_idx-idx
 %calculate min stay length (or max and nan pad)
 leave_trial_idx=get_leave_idx(epoch_data);
 first_stay_idx=[1 leave_trial_idx(1:end-1)+1];
 
-patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idx,leave_trial_idx,'UniformOutput',false);
-patch1
-epoch_data.data = epoch_data.data(:,:,patch_trial_idxs{1});
-leave_trial_idx=get_leave_idx(epoch_data);
-first_stay_idx=[1 leave_trial_idx(1:end-1)+1];
+% Check alignment patchwise:
+% patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idx,leave_trial_idx,'UniformOutput',false);
+% patch1 = epoch_data;
+% patch1.data = epoch_data.data(:,:,patch_trial_idxs{1});
+% epoch_data = patch1;
+% leave_trial_idx=6;first_stay_idx=1;min_stay_len=5;
 
 leave_trial_idx(2:end+1)=leave_trial_idx(1:end);leave_trial_idx(1)=0;
 min_stay_len = min(min(diff(leave_trial_idx)-1),6);
-
 leave_trial_idx = get_leave_idx(epoch_data);
+
 leave = epoch_data;
 leave.data=epoch_data.data(:,:,leave_trial_idx);
 for idx = 0:min_stay_len
-    if idx~=0
+    if idx~=min_stay_len
         eval(strcat('stay_',num2str(idx+1),'= epoch_data;'));
         eval(strcat('stay_',num2str(idx+1),'.data=epoch_data.data(:,:,first_stay_idx+idx);'));
     end
     eval(strcat('leave_',num2str(idx),'= epoch_data;'));
     eval(strcat('leave_',num2str(idx),'.data=epoch_data.data(:,:,leave_trial_idx-idx);'));
-    %would ideally need to update .epoch, .event and .trials
+    %would ideally need to update .epoch, .event and .trials when copying
+    %EEG structs. try pop_select or something similar.
 end
+disp('DONE!!')
 %%
 fooof_settings = struct('peak_width_limits',[4 10]);
 figure('Name',EEG.chanlocs(chan_idx).labels);hold on;
 c=sky(min_stay_len+1);
-for idx=1%min_stay_len+1
-    eval(strcat('stay_alligned_prestim = eeg_fooof(stay_',num2str(idx),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
-    fooof_prestim = cell2mat(stay_alligned_prestim.etc.FOOOF_results);
-    plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat('Stay ',num2str(idx)),'LineWidth',2,'LineStyle','-','Color',c(idx,:));
-    % plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat('Stay ',num2str(idx),' fit'),'LineWidth',3,'LineStyle','--','Color',c(end-idx+1,:));
-    % xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',%p1.Color,'LineWidth',2);
-end
-for idx=1
+for idx=6%:min_stay_len+1
+    if idx~=min_stay_len+1
+        eval(strcat('stay_alligned_prestim = eeg_fooof(stay_',num2str(idx),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
+        fooof_prestim = cell2mat(stay_alligned_prestim.etc.FOOOF_results);
+        plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat('Stay ',num2str(idx)),'LineWidth',2,'LineStyle','-','Color',c(idx,:));
+        % plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat('Stay ',num2str(idx),' fit'),'LineWidth',3,'LineStyle','--','Color',c(idx,:));
+        % xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',%p1.Color,'LineWidth',2);
+    end
     eval(strcat('leave_alligned_prestim = eeg_fooof(leave_',num2str(min_stay_len-idx+1),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
     fooof_prestim = cell2mat(leave_alligned_prestim.etc.FOOOF_results);
     plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat('Leave - ',num2str(min_stay_len-idx+1)),'LineWidth',2,'LineStyle',':','Color',c(idx,:));
