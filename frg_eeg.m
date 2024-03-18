@@ -1,14 +1,14 @@
 %% Foraging EEG analysis:
-cd 'C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1';
+% cd 'C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1';
 clear;clc;eeglab;close;
-cd 'C:\Users\promitmoitra\Documents\GitHub\frg\'
+% cd 'C:\Users\promitmoitra\Documents\GitHub\frg\'
 % data_path = '/home/decision_lab/work/frg/foraging/Neuroflow/';
 % badids = [37532 38058 39862 42125 43543 45194 46037 47678 47744 47801 48238 48278];
 % %%% badids are [37532 38058 39862 42125 43543 '45194' 46037 '47678' 47744 47801 48238 48278];
 % subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
 % %%% sub 47801 has no poststress long travel time markers TRIGGER EVENT U
 % 
-% subid = subids(subids==7873);
+subid = 7873;%subids(subids==7873);
 
 %%% Main loop
 % for idx = 1:length(subids)
@@ -17,7 +17,7 @@ cd 'C:\Users\promitmoitra\Documents\GitHub\frg\'
 % data_file = dir(fullfile(data_path,string(subid),'*EEG','*.edf'));
 % data_file_path = fullfile(data_file(end).folder,data_file(end).name);
 
-data_file_path = './data/7873.edf';
+data_file_path = ['./data/',num2str(subid),'.edf'];
 EEG = pop_biosig(data_file_path,'channels',1:19);
 
 %%% Load data, rereference, seperate pre and post stress blocks:
@@ -144,7 +144,6 @@ postEEG = pop_firws(postEEG,'wtype',wtype,'ftype','bandpass','fcutoff',freqs,'fo
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %% Epoch locked to stimulus (Trigger Event N) or response (Trigger Events [O, R]):
 channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));
 
@@ -292,48 +291,56 @@ leave_trial_idx=get_leave_idx(epoch_data);
 first_stay_idx=[1 leave_trial_idx(1:end-1)+1];
 
 % Check alignment patchwise:
-% patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idx,leave_trial_idx,'UniformOutput',false);
-% patch1 = epoch_data;
-% patch1.data = epoch_data.data(:,:,patch_trial_idxs{1});
-% epoch_data = patch1;
-% leave_trial_idx=6;first_stay_idx=1;min_stay_len=5;
+patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idx,leave_trial_idx,'UniformOutput',false);
+num_patches=size(patch_trial_idxs,2);patch_trial_len=cell2mat(cellfun(@length,patch_trial_idxs,'UniformOutput',false));
+patch_slopes = cell(num_patches,1);
 
-leave_trial_idx(2:end+1)=leave_trial_idx(1:end);leave_trial_idx(1)=0;
-min_stay_len = min(min(diff(leave_trial_idx)-1),6);
-leave_trial_idx = get_leave_idx(epoch_data);
-
-leave = epoch_data;
-leave.data=epoch_data.data(:,:,leave_trial_idx);
-for idx = 0:min_stay_len
-    if idx~=min_stay_len
-        eval(strcat('stay_',num2str(idx+1),'= epoch_data;'));
-        eval(strcat('stay_',num2str(idx+1),'.data=epoch_data.data(:,:,first_stay_idx+idx);'));
+fig=figure('Name',num2str(subid)); hold on;
+for patch_idx=1:num_patches
+    epoch_data = preEEG_epoch;
+    min_stay_len=patch_trial_len(patch_idx)-1;
+    first_stay_idx=1;leave_trial_idx=patch_trial_len(patch_idx);
+    patch = epoch_data;patch.data = epoch_data.data(:,:,patch_trial_idxs{patch_idx});epoch_data = patch;
+    
+    % leave_trial_idx(2:end+1)=leave_trial_idx(1:end);leave_trial_idx(1)=0;
+    % min_stay_len = min(min(diff(leave_trial_idx)-1),6);
+    % leave_trial_idx = get_leave_idx(epoch_data);
+    
+    for idx = 0:min_stay_len
+        if idx~=min_stay_len
+            eval(strcat('stay_',num2str(idx+1),'= epoch_data;'));
+            eval(strcat('stay_',num2str(idx+1),'.data=epoch_data.data(:,:,first_stay_idx+idx);'));
+        end
+        eval(strcat('leave_',num2str(idx),'= epoch_data;'));
+        eval(strcat('leave_',num2str(idx),'.data=epoch_data.data(:,:,leave_trial_idx-idx);'));
+        %would ideally need to update .epoch, .event and .trials when copying
+        %EEG structs. try pop_select or something similar.
     end
-    eval(strcat('leave_',num2str(idx),'= epoch_data;'));
-    eval(strcat('leave_',num2str(idx),'.data=epoch_data.data(:,:,leave_trial_idx-idx);'));
-    %would ideally need to update .epoch, .event and .trials when copying
-    %EEG structs. try pop_select or something similar.
-end
-disp('DONE!!')
-%%
-fooof_settings = struct('peak_width_limits',[4 10]);
-figure('Name',EEG.chanlocs(chan_idx).labels);hold on;
-c=sky(min_stay_len+1);
-for idx=6%:min_stay_len+1
-    if idx~=min_stay_len+1
-        eval(strcat('stay_alligned_prestim = eeg_fooof(stay_',num2str(idx),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
-        fooof_prestim = cell2mat(stay_alligned_prestim.etc.FOOOF_results);
-        plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat('Stay ',num2str(idx)),'LineWidth',2,'LineStyle','-','Color',c(idx,:));
-        % plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat('Stay ',num2str(idx),' fit'),'LineWidth',3,'LineStyle','--','Color',c(idx,:));
-        % xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',%p1.Color,'LineWidth',2);
+    
+    fooof_settings = struct('peak_width_limits',[2 10],'peak_threshold',2.5);
+%     figure('Name',EEG.chanlocs(chan_idx).labels);hold on;
+%     c=parula(min_stay_len+1);%c(1:end)=c(end:-1:1);
+    trial_idx = [1:min_stay_len+1];
+    for idx=trial_idx
+    %     if idx~=min_stay_len+1
+    %         eval(strcat('stay_alligned_prestim = eeg_fooof(stay_',num2str(idx),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
+    %         fooof_prestim = cell2mat(stay_alligned_prestim.etc.FOOOF_results);
+    %         slopes(idx) = fooof_prestim(chan_idx).aperiodic_params(end);
+    % %         stay_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat("Stay ",num2str(idx)),'LineWidth',2,'LineStyle','-','Color',c(idx,:));
+    % %         stay_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat('Stay ',num2str(idx),' fit'),'LineWidth',3,'LineStyle','--','Color',c(idx,:));
+    % %         xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',c(idx,:),'LineWidth',2);
+    %     end
+        eval(strcat('leave_alligned_prestim = eeg_fooof(leave_',num2str(min_stay_len-idx+1),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
+        fooof_prestim = cell2mat(leave_alligned_prestim.etc.FOOOF_results);
+        patch_slopes{patch_idx,idx} = fooof_prestim(chan_idx).aperiodic_params(end);
+    % %     leave_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat("Leave - ",num2str(min_stay_len-idx+1)),'LineWidth',2,'LineStyle','-','Color',c(idx,:));
+    % %     leave_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat("Leave - ",num2str(min_stay_len-idx+1),' fit'),'LineWidth',3,'LineStyle',':','Color',c(idx,:));
+    % %     xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',c(idx,:),'LineWidth',2);
     end
-    eval(strcat('leave_alligned_prestim = eeg_fooof(leave_',num2str(min_stay_len-idx+1),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
-    fooof_prestim = cell2mat(leave_alligned_prestim.etc.FOOOF_results);
-    plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat('Leave - ',num2str(min_stay_len-idx+1)),'LineWidth',2,'LineStyle',':','Color',c(idx,:));
-    % plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat('Leave - ',num2str(idx-1),' fit'),'LineWidth',3,'LineStyle',':','Color',c(idx,:));
-    % xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',%p1.Color,'LineWidth',2);
+    % legend([stay_prestim(trial_idx(1:end-1))]);
+    % ax=gca;ax.XScale='log';ax.YScale='log'; hold off;
+    plot(trial_idx,[patch_slopes{patch_idx,:}]);hold on;
 end
-legend; ax=gca;ax.XScale='linear';ax.YScale='log'; hold off;
 %%
 % poststim = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[0 1]*1000,100,freqs,fooof_settings);
 % fooof_poststim = cell2mat(poststim.etc.FOOOF_results);
