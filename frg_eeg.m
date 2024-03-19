@@ -290,57 +290,67 @@ chan_idx = cz_idx;
 leave_trial_idx=get_leave_idx(epoch_data);
 first_stay_idx=[1 leave_trial_idx(1:end-1)+1];
 
-% Check alignment patchwise:
 patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idx,leave_trial_idx,'UniformOutput',false);
-num_patches=size(patch_trial_idxs,2);patch_trial_len=cell2mat(cellfun(@length,patch_trial_idxs,'UniformOutput',false));
-patch_slopes = cell(num_patches,1);
+num_patches=size(patch_trial_idxs,2);
+patch_trial_len=cell2mat(cellfun(@length,patch_trial_idxs,'UniformOutput',false));
+patch_slopes = nan(num_patches,max(patch_trial_len));
+patch_bandpower = nan(num_patches,max(patch_trial_len));
 
-fig=figure('Name',num2str(subid)); hold on;
+% fig1=figure('Name',num2str(subid)); hold on;
 for patch_idx=1:num_patches
     epoch_data = preEEG_epoch;
+%     epoch_data = postEEG_epoch;
     min_stay_len=patch_trial_len(patch_idx)-1;
     first_stay_idx=1;leave_trial_idx=patch_trial_len(patch_idx);
     patch = epoch_data;patch.data = epoch_data.data(:,:,patch_trial_idxs{patch_idx});epoch_data = patch;
     
-    % leave_trial_idx(2:end+1)=leave_trial_idx(1:end);leave_trial_idx(1)=0;
-    % min_stay_len = min(min(diff(leave_trial_idx)-1),6);
-    % leave_trial_idx = get_leave_idx(epoch_data);
+    fooof_settings = struct('peak_width_limits',[2 10],'peak_threshold',2);
     
-    for idx = 0:min_stay_len
-        if idx~=min_stay_len
-            eval(strcat('stay_',num2str(idx+1),'= epoch_data;'));
-            eval(strcat('stay_',num2str(idx+1),'.data=epoch_data.data(:,:,first_stay_idx+idx);'));
-        end
-        eval(strcat('leave_',num2str(idx),'= epoch_data;'));
-        eval(strcat('leave_',num2str(idx),'.data=epoch_data.data(:,:,leave_trial_idx-idx);'));
+    for idx = first_stay_idx:leave_trial_idx
+%         if idx~=leave_trial_idx
+%             eval(strcat('stay_',num2str(idx),'= epoch_data;'));
+%             eval(strcat('stay_',num2str(idx),'.data=epoch_data.data(:,:,first_stay_idx+idx-1);'));
+%         end
+        eval(strcat('leave_',num2str(idx-1),'= epoch_data;'));
+        eval(strcat('leave_',num2str(idx-1),'.data=epoch_data.data(:,:,leave_trial_idx-idx+1);'));
         %would ideally need to update .epoch, .event and .trials when copying
-        %EEG structs. try pop_select or something similar.
-    end
+        %EEG structs. try pop_select(EEG,'trials').
+%     end
     
-    fooof_settings = struct('peak_width_limits',[2 10],'peak_threshold',2.5);
-%     figure('Name',EEG.chanlocs(chan_idx).labels);hold on;
 %     c=parula(min_stay_len+1);%c(1:end)=c(end:-1:1);
-    trial_idx = [1:min_stay_len+1];
-    for idx=trial_idx
-    %     if idx~=min_stay_len+1
-    %         eval(strcat('stay_alligned_prestim = eeg_fooof(stay_',num2str(idx),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
-    %         fooof_prestim = cell2mat(stay_alligned_prestim.etc.FOOOF_results);
-    %         slopes(idx) = fooof_prestim(chan_idx).aperiodic_params(end);
-    % %         stay_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat("Stay ",num2str(idx)),'LineWidth',2,'LineStyle','-','Color',c(idx,:));
-    % %         stay_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat('Stay ',num2str(idx),' fit'),'LineWidth',3,'LineStyle','--','Color',c(idx,:));
-    % %         xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',c(idx,:),'LineWidth',2);
-    %     end
+%     trial_idx = [1:min_stay_len+1];
+%     for idx=trial_idx
+%         if idx~=leave_trial_idx
+%             eval(strcat('stay_alligned_prestim = eeg_fooof(stay_',num2str(idx),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
+%             fooof_prestim = cell2mat(stay_alligned_prestim.etc.FOOOF_results);
+%     %         stay_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat("Stay ",num2str(idx)),'LineWidth',2,'LineStyle','-','Color',c(idx,:));
+%     %         stay_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat('Stay ',num2str(idx),' fit'),'LineWidth',3,'LineStyle','--','Color',c(idx,:));
+%     %         xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',c(idx,:),'LineWidth',2);
+%             patch_slopes(patch_idx,idx) = fooof_prestim(chan_idx).aperiodic_params(end);
+%         end
         eval(strcat('leave_alligned_prestim = eeg_fooof(leave_',num2str(min_stay_len-idx+1),',"channel",[1:EEG.nbchan],[-1 0]*1000,100,freqs,fooof_settings);'))
         fooof_prestim = cell2mat(leave_alligned_prestim.etc.FOOOF_results);
-        patch_slopes{patch_idx,idx} = fooof_prestim(chan_idx).aperiodic_params(end);
-    % %     leave_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat("Leave - ",num2str(min_stay_len-idx+1)),'LineWidth',2,'LineStyle','-','Color',c(idx,:));
-    % %     leave_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat("Leave - ",num2str(min_stay_len-idx+1),' fit'),'LineWidth',3,'LineStyle',':','Color',c(idx,:));
-    % %     xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',c(idx,:),'LineWidth',2);
+    %     leave_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).fooofed_spectrum),'DisplayName',strcat("Leave - ",num2str(min_stay_len-idx+1)),'LineWidth',2,'LineStyle','-','Color',c(idx,:));
+    %     leave_prestim(idx) = plot(fooof_prestim(chan_idx).freqs,10.^(fooof_prestim(chan_idx).ap_fit),'DisplayName',strcat("Leave - ",num2str(min_stay_len-idx+1),' fit'),'LineWidth',3,'LineStyle',':','Color',c(idx,:));
+    %     xline(fooof_prestim(chan_idx).peak_params(:,1),'LineStyle',':','Color',c(idx,:),'LineWidth',2);
+        patch_slopes(patch_idx,idx+max(patch_trial_len)-(2*idx-1)) = fooof_prestim(chan_idx).aperiodic_params(end);
     end
     % legend([stay_prestim(trial_idx(1:end-1))]);
-    % ax=gca;ax.XScale='log';ax.YScale='log'; hold off;
-    plot(trial_idx,[patch_slopes{patch_idx,:}]);hold on;
+    % ax=gca;ax.XScale='log';ax.YScale='log';
 end
+disp("DONE!!")
+%%
+fig=figure('Name',strcat(num2str(subid)," ",channel," ",stress_flag)); hold on;
+for patch_idx=1:num_patches
+    [s,m]=std(patch_slopes,1,1,'omitnan');
+    errorbar(1:max(patch_trial_len),m,s, ...
+      'Marker','o','LineWidth',2.5,'DisplayName',"Patch Avg");hold on;
+    for trial_idx=1:patch_trial_len(patch_idx)
+        p(patch_idx)=plot(1:max(patch_trial_len),patch_slopes(patch_idx,:), ...
+                        'LineWidth',2.5,'DisplayName',strcat("Patch ",num2str(patch_idx)));hold on;
+    end
+end
+legend(p);
 %%
 % poststim = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[0 1]*1000,100,freqs,fooof_settings);
 % fooof_poststim = cell2mat(poststim.etc.FOOOF_results);
@@ -380,7 +390,13 @@ end
 % title = strcat('/home/decision_lab/work/data_hddm/l0_eeg_hddm/raw/',string(subid),'_eeg_hddm.csv');
 % writetable(subT,title);
 % end
-
+%% scratchpad
+% patch_trials=single(~cellfun('isempty',patch_slopes));patch_trials(patch_trials==0)=nan;
+% [[patch_slopes{patch_idx,:}], NaN(1,size(patch_slopes,2)-length([patch_slopes{patch_idx,:}]))];
+% leave_trial_idx(2:end+1)=leave_trial_idx(1:end);leave_trial_idx(1)=0;
+    % min_stay_len = min(min(diff(leave_trial_idx)-1),6);
+    % leave_trial_idx = get_leave_idx(epoch_data);
+%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%==Function Definitions==%%%%%%%%%%%%%%%%%%%%%%%%%
 function leave_idx = get_leave_idx(ep_dat)
     leave_idx = []; 
