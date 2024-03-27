@@ -8,7 +8,7 @@ clear;clc;eeglab;close;
 % subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
 % %%% sub 47801 has no poststress long travel time markers TRIGGER EVENT U
 % 
-subid = 15083;%subids(subids==7873);
+subid = 7873;%subids(subids==7873);
 
 %%% Main loop
 % for idx = 1:length(subids)
@@ -148,6 +148,37 @@ postEEG = pop_firws(postEEG,'wtype',wtype,'ftype','bandpass','fcutoff',freqs,'fo
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%% Extract travel-time blocks from markers:
+pre_events = {preEEG.event.type};
+pre_short_end = find(strcmp(pre_events,'TRIGGER EVENT T'));pre_short_end = pre_short_end(end);
+pre_long_end = find(strcmp(pre_events,'TRIGGER EVENT U'));pre_long_end = pre_long_end(end);
+post_events = {postEEG.event.type};
+post_short_end = find(strcmp(post_events,'TRIGGER EVENT T'));post_short_end = post_short_end(end);
+post_long_end = find(strcmp(post_events,'TRIGGER EVENT U'));post_long_end = post_long_end(end);
+
+pre_short_end_time = preEEG.event(pre_short_end).latency/EEG.srate;
+pre_long_end_time = preEEG.event(pre_long_end).latency/EEG.srate;
+post_short_end_time = postEEG.event(post_short_end).latency/EEG.srate;
+post_long_end_time = postEEG.event(post_long_end).latency/EEG.srate;
+
+if pre_short_end<pre_long_end
+    preshortEEG = pop_select(preEEG,'time',[0 pre_short_end_time+15]);
+    prelongEEG = pop_select(preEEG,'time',[pre_short_end_time+15 pre_long_end_time]);
+else
+    prelongEEG = pop_select(preEEG,'time',[0 pre_long_end_time+15]);
+    preshortEEG = pop_select(preEEG,'time',[pre_long_end_time+15 pre_short_end_time]);
+end
+
+if post_short_end<post_long_end
+    postshortEEG = pop_select(postEEG,'time',[0 post_short_end_time+15]);
+    postlongEEG = pop_select(postEEG,'time',[post_short_end_time+15 post_long_end_time]);
+else
+    postlongEEG = pop_select(postEEG,'time',[0 post_long_end_time+15]);
+    postshortEEG = pop_select(postEEG,'time',[post_long_end_time+15 post_short_end_time]);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% Epoch locked to stimulus (Trigger Event N) or response (Trigger Events [O, R]):
 channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));
 
@@ -167,6 +198,10 @@ epoch_trange = [-1 2]; %baseline = [-1 0]*1000;
 preEEG_epoch = pop_epoch(preEEG,lock_event,epoch_trange);
 postEEG_epoch = pop_epoch(postEEG,lock_event,epoch_trange);
 
+preshort_epoch = pop_epoch(preshortEEG,lock_event,epoch_trange);
+prelong_epoch = pop_epoch(prelongEEG,lock_event,epoch_trange);
+postshort_epoch = pop_epoch(postshortEEG,lock_event,epoch_trange);
+postlong_epoch = pop_epoch(postlongEEG,lock_event,epoch_trange);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% 
@@ -287,8 +322,14 @@ postEEG_epoch = pop_epoch(postEEG,lock_event,epoch_trange);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Spectral parameter analysis
-% epoch_data = preEEG_epoch; stress_flag = 'pre';
-epoch_data = postEEG_epoch; stress_flag = 'post';
+epoch_data = preEEG_epoch; stress_flag='pre'; tt_flag='';
+% epoch_data = postEEG_epoch; stress_flag='post'; tt_flag='';
+
+% epoch_data = preshort_epoch; stress_flag='pre'; tt_flag='short';
+% epoch_data = prelong_epoch; stress_flag='pre'; tt_flag='long';
+% epoch_data = postshort_epoch; stress_flag='post'; tt_flag='short';
+% epoch_data = postlong_epoch; stress_flag='post'; tt_flag='long';
+
 chan_idx = cz_idx;
 
 leave_trial_idxs=get_leave_idx(epoch_data);
@@ -322,7 +363,7 @@ for idx=1:max(patch_trial_len)
     beta_peak_locs = find(fooof_prestim(chan_idx).peak_params(:,1)>15 & fooof_prestim(chan_idx).peak_params(:,1)<35);
     peak_locs=beta_peak_locs;
     if ~isempty(peak_locs)
-        stay_lock_patch_bandpower(1,idx) = max(fooof_prestim(chan_idx).peak_params(peak_locs,2));
+        stay_lock_patch_bandpower(1,idx) = mean(fooof_prestim(chan_idx).peak_params(peak_locs,2));
     end
     eval(strcat("leave_",num2str(max(patch_trial_len)-idx),"= pop_select(epoch_data,'trial',leave_locked_patch_trial_idxs(~isnan(leave_locked_patch_trial_idxs(:,", ...
                 num2str(idx),")),",num2str(idx),"));leave_",num2str(max(patch_trial_len)-idx),".xmin=-1;leave_", ...
@@ -331,12 +372,12 @@ for idx=1:max(patch_trial_len)
     fooof_prestim = cell2mat(leave_lock_fooof_prestim.etc.FOOOF_results);
     leave_lock_patch_slopes(1,idx) = fooof_prestim(chan_idx).aperiodic_params(end);
 
-    theta_peak_locs = find(fooof_prestim(chan_idx).peak_params(:,1)>3 & fooof_prestim(chan_idx).peak_params(:,1)<6);
+    theta_peak_locs = find(fooof_prestim(chan_idx).peak_params(:,1)>4 & fooof_prestim(chan_idx).peak_params(:,1)<7);
     alpha_peak_locs = find(fooof_prestim(chan_idx).peak_params(:,1)>7 & fooof_prestim(chan_idx).peak_params(:,1)<14);
-    beta_peak_locs = find(fooof_prestim(chan_idx).peak_params(:,1)>15 & fooof_prestim(chan_idx).peak_params(:,1)<35);
+    beta_peak_locs = find(fooof_prestim(chan_idx).peak_params(:,1)>15 & fooof_prestim(chan_idx).peak_params(:,1)<30);
     peak_locs=beta_peak_locs;
     if ~isempty(peak_locs)
-        leave_lock_patch_bandpower(1,idx) = max(fooof_prestim(chan_idx).peak_params(peak_locs,2));
+        leave_lock_patch_bandpower(1,idx) = mean(fooof_prestim(chan_idx).peak_params(peak_locs,2));
     end
 end
 
@@ -374,29 +415,24 @@ end
 %     % legend([stay_prestim(trial_idx(1:end-1))]);
 %     % ax=gca;ax.XScale='log';ax.YScale='log';
 % end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fprintf('Done!')
 %% Plotting
-fig=figure('Name',strcat(num2str(subid)," ",channel," ",stress_flag)); hold on;
+fig=figure('Name',strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag)); hold on;
 stay_lock=1;
 if stay_lock
     [~,slopes]=std(stay_lock_patch_slopes,1,1,'omitnan');
-    [~,bpw]=std(stay_lock_patch_bandpower,1,1,'omitnan');
-    p=plot(1:max(patch_trial_len),slopes,'Marker','o','LineWidth',2.5,'DisplayName',"Patch Avg");hold on;
-%     p=plot(1:max(patch_trial_len),bpw,'Marker','o','LineWidth',2.5,'DisplayName',"Patch Avg");hold on;
+    [~,bp]=std(stay_lock_patch_bandpower,1,1,'omitnan');
+%     p=plot(1:max(patch_trial_len),slopes,'Marker','o','LineWidth',2.5,'DisplayName',"Patch Avg");hold on;
+    p=plot(1:max(patch_trial_len),bp,'Marker','o','LineWidth',2.5,'DisplayName',"Patch Avg");hold on;
 else
     [~,slopes]=std(leave_lock_patch_slopes,1,1,'omitnan');
-    [~,bpw]=std(leave_lock_patch_bandpower,1,1,'omitnan');
-    p=plot(1:max(patch_trial_len),slopes,'Marker','o','LineWidth',2.5,'DisplayName',"Patch Avg");hold on;
-%     p=plot(1:max(patch_trial_len),bpw,'Marker','o','LineWidth',2.5,'DisplayName',"Patch Avg");hold on;
+    [~,bp]=std(leave_lock_patch_bandpower,1,1,'omitnan');
+%     p=plot(1:max(patch_trial_len),slopes,'Marker','o','LineWidth',2.5,'DisplayName',"Patch Avg");hold on;
+    p=plot(1:max(patch_trial_len),bp,'Marker','o','LineWidth',2.5,'DisplayName',"Patch Avg");hold on;
 end
-%     for patch_idx=1:num_patches
-%     [s,m]=std(patch_bandpower,1,1,'omitnan');
-%     p=errorbar(1:max(patch_trial_len),m,s, ...
-%       'Marker','o','LineWidth',2.5,'DisplayName',"Patch Avg");hold on;
-%     % for trial_idx=1:patch_trial_len(patch_idx)
-%     %     p(patch_idx)=plot(1:max(patch_trial_len),patch_slopes(patch_idx,:), ...
-%     %                     'LineWidth',2.5,'DisplayName',strcat("Patch ",num2str(patch_idx)));hold on;
-%     % end
-% end
+
 if stay_lock
     xticks(1:max(patch_trial_len));
     xlabel("Trial")
@@ -408,7 +444,7 @@ else
     title("Leave alligned");
 end
 % ylabel("SpecParam Exponent")
-ylabel("Max peak value")
+ylabel("<Beta PSD peaks>")
 legend(p);hold off;
 %%
 % poststim = eeg_fooof(preEEG_epoch,"channel",[1:EEG.nbchan],[0 1]*1000,100,freqs,fooof_settings);
@@ -450,6 +486,15 @@ legend(p);hold off;
 % writetable(subT,title);
 % end
 %% scratchpad
+%     for patch_idx=1:num_patches
+%     [s,m]=std(patch_bandpower,1,1,'omitnan');
+%     p=errorbar(1:max(patch_trial_len),m,s, ...
+%       'Marker','o','LineWidth',2.5,'DisplayName',"Patch Avg");hold on;
+%     % for trial_idx=1:patch_trial_len(patch_idx)
+%     %     p(patch_idx)=plot(1:max(patch_trial_len),patch_slopes(patch_idx,:), ...
+%     %                     'LineWidth',2.5,'DisplayName',strcat("Patch ",num2str(patch_idx)));hold on;
+%     % end
+% end
 % c=parula(min_stay_len+1);%c(1:end)=c(end:-1:1);
 % patch_trials=single(~cellfun('isempty',patch_slopes));patch_trials(patch_trials==0)=nan;
 % [[patch_slopes{patch_idx,:}], NaN(1,size(patch_slopes,2)-length([patch_slopes{patch_idx,:}]))];
