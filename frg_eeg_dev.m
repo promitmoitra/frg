@@ -8,7 +8,7 @@ cd 'C:\Users\promitmoitra\Documents\GitHub\frg\'
 % subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
 % %%% sub 47801 has no poststress long travel time markers TRIGGER EVENT U
 % 
-subid = 7873;%subids(subids==7873);
+subid = 15083;%subids(subids==7873);
 
 %%% Main loop
 % for idx = 1:length(subids)
@@ -298,9 +298,9 @@ postlong_epoch = pop_epoch(postlongEEG,lock_event,epoch_trange);
 % % epoch_data = preEEG_epoch; stress_flag='pre'; tt_flag='';
 % % epoch_data = postEEG_epoch; stress_flag='post'; tt_flag='';
 % 
-% epoch_data = preshort_epoch; stress_flag='pre'; tt_flag='short';
-% % epoch_data = prelong_epoch; stress_flag='pre'; tt_flag='long';
-% % epoch_data = postshort_epoch; stress_flag='post'; tt_flag='short';
+% epoch_data = preshort_epoch;   stress_flag='pre'; tt_flag='short';
+% % epoch_data = prelong_epoch;  stress_flag='pre'; tt_flag='long';
+% % epoch_data = postshort_epoch;stress_flag='post'; tt_flag='short';
 % % epoch_data = postlong_epoch; stress_flag='post'; tt_flag='long';
 % 
 % channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));
@@ -408,7 +408,11 @@ postlong_epoch = pop_epoch(postlongEEG,lock_event,epoch_trange);
 % end
 % fprintf('SpecParam Done!\n')
 
-stress_flag='pre'; tt_flag='long';
+% stress_flag='pre'; tt_flag='short';
+% stress_flag='pre'; tt_flag='long';
+% stress_flag='post'; tt_flag='short';
+stress_flag='post'; tt_flag='long';
+
 eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
 channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));
 chan_idx = cz_idx;
@@ -470,10 +474,12 @@ data_flag = "alpha_bp"; ylab = "Alpha band power";
 eval(strcat("stay_lock_data = stay_lock_res.",data_flag,";"));
 frac_nan=sum(isnan(stay_lock_data),1)/(size(stay_lock_data,1)-1);
 stay_lock_data=stay_lock_data(:,frac_nan<=0.25);
+stay_lock_data=stay_lock_data(:,1:int8(size(stay_lock_data,2)/2));
 
 eval(strcat("leave_lock_data = leave_lock_res.",data_flag,";"));
 frac_nan=sum(isnan(leave_lock_data),1)/(size(leave_lock_data,1)-1);
 leave_lock_data=leave_lock_data(:,frac_nan<=0.25);
+leave_lock_data=leave_lock_data(:,int8(size(leave_lock_data,2)/2):end);
 
 plot_data = [stay_lock_data leave_lock_data];
 
