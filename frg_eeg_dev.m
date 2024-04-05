@@ -1,7 +1,7 @@
 %% Foraging EEG analysis:
-cd 'C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1';
+% cd 'C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1';
 clear;clc;eeglab;close;
-cd 'C:\Users\promitmoitra\Documents\GitHub\frg\'
+% cd 'C:\Users\promitmoitra\Documents\GitHub\frg\'
 % data_path = '/home/decision_lab/work/frg/foraging/Neuroflow/';
 % badids = [37532 38058 39862 42125 43543 45194 46037 47678 47744 47801 48238 48278];
 % %%% badids are [37532 38058 39862 42125 43543 '45194' 46037 '47678' 47744 47801 48238 48278];
@@ -467,8 +467,8 @@ patch_trial_len = cell2mat(cellfun(@length,patch_trial_idxs,'UniformOutput',fals
 % data_flag = "slopes"; ylab = "Aperiodic exponent";
 % data_flag = "delta_bp"; ylab = "Delta band power";
 % data_flag = "theta_bp"; ylab = "Theta band power";
-data_flag = "alpha_bp"; ylab = "Alpha band power";
-% data_flag = "beta_bp"; ylab = "Beta band power";
+% data_flag = "alpha_bp"; ylab = "Alpha band power";
+data_flag = "beta_bp"; ylab = "Beta band power";
 % data_flag = "gamma_bp"; ylab = "Gamma band power";
 
 eval(strcat("stay_lock_data = stay_lock_res.",data_flag,";"));
