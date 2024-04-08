@@ -109,22 +109,37 @@ channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));chan_idx =
 
 stress_flag='pre'; tt_flag='short';
 eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+global stay_lock_res; global leave_lock_res;
+
+fig1=figure(); hold on;
+axs_exp=[];
+for idx=1:4
+    axs_exp=[axs_exp subplot(2,2,idx)];
+end
+fig1 = axs_exp(1).Parent;
+
+fig2=figure();hold on;
+axs_beta=[];
+for idx=1:4
+    axs_beta=[axs_beta subplot(2,2,idx)];
+end
+fig2 = axs_beta(1).Parent;
 
 data_flag = "slopes"; ylab = "Aperiodic exponent";
-fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-fig.Name= figname;
-title(figname);
+[stay_lock_res,leave_lock_res] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs,false,axs_exp(1));
+% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
+% fig.Name= figname;
+% title(figname);
 %savefig
 %save stay_lock_res,leave_lock_res
 
 data_flag = "beta_bp"; ylab = "Beta band power";
-fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-fig.Name= figname;
-title(figname);
-%savefig
-%save stay_lock_res,leave_lock_res
+[stay_lock_res,leave_lock_res] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs,true,axs_beta(1));
+% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
+% fig.Name= figname;
+% title(figname);
+% %savefig
+% %save stay_lock_res,leave_lock_res
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -132,61 +147,61 @@ stress_flag='pre'; tt_flag='long';
 eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
 
 data_flag = "slopes"; ylab = "Aperiodic exponent";
-fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-fig.Name= figname;
-title(figname);
+[stay_lock_res,leave_lock_res] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs,false,axs_exp(2));
+% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
+% fig.Name= figname;
+% title(figname);
 %savefig
 %save stay_lock_res,leave_lock_res
 
 data_flag = "beta_bp"; ylab = "Beta band power";
-fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-fig.Name= figname;
-title(figname);
+[stay_lock_res,leave_lock_res] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs,true,axs_beta(2));
+% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
+% fig.Name= figname;
+% title(figname);
 %savefig
 %save stay_lock_res,leave_lock_res
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-stress_flag='post'; tt_flag='short';
-eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-
-data_flag = "slopes"; ylab = "Aperiodic exponent";
-fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-fig.Name= figname;
-title(figname);
-%savefig
-%save stay_lock_res,leave_lock_res
-
-data_flag = "beta_bp"; ylab = "Beta band power";
-fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-fig.Name= figname;
-title(figname);
-%savefig
-%save stay_lock_res,leave_lock_res
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-stress_flag='post'; tt_flag='long';
-eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-
-data_flag = "slopes"; ylab = "Aperiodic exponent";
-fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-fig.Name= figname;
-title(figname);
-%savefig
-%save stay_lock_res,leave_lock_res
-
-data_flag = "beta_bp"; ylab = "Beta band power";
-fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-fig.Name= figname;
-title(figname);
-%savefig
-%save stay_lock_res,leave_lock_res
+% 
+% stress_flag='post'; tt_flag='short';
+% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+% 
+% data_flag = "slopes"; ylab = "Aperiodic exponent";
+% fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
+% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
+% fig.Name= figname;
+% title(figname);
+% %savefig
+% %save stay_lock_res,leave_lock_res
+% 
+% data_flag = "beta_bp"; ylab = "Beta band power";
+% fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
+% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
+% fig.Name= figname;
+% title(figname);
+% %savefig
+% %save stay_lock_res,leave_lock_res
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% stress_flag='post'; tt_flag='long';
+% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+% 
+% data_flag = "slopes"; ylab = "Aperiodic exponent";
+% fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
+% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
+% fig.Name= figname;
+% title(figname);
+% %savefig
+% %save stay_lock_res,leave_lock_res
+% 
+% data_flag = "beta_bp"; ylab = "Beta band power";
+% fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
+% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
+% fig.Name= figname;
+% title(figname);
+% %savefig
+% %save stay_lock_res,leave_lock_res
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -277,11 +292,11 @@ function [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs)
         %     eval(strcat("stay_lock_fooof_prestim = eeg_fooof(stay_",num2str(idx),",'channel',[1:ep_dat.nbchan],[-1 0]*1000,100,freqs,fooof_settings);"));
             fooof_prestim = cell2mat(stay_lock_fooof_prestim.etc.FOOOF_results(chan_idx));
         %     stay_lock_slopes(1,idx) = fooof_prestim(chan_idx).aperiodic_params(end);
-            stay_lock_slopes(end,idx) = fooof_prestim.aperiodic_params(end);
+            stay_lock_slopes(end,idx)   = fooof_prestim.aperiodic_params(end);
             stay_lock_delta_bp(end,idx) = mean(fooof_prestim.bandpowers(1),'omitnan');
             stay_lock_theta_bp(end,idx) = mean(fooof_prestim.bandpowers(2),'omitnan');
             stay_lock_alpha_bp(end,idx) = mean(fooof_prestim.bandpowers(3),'omitnan');
-            stay_lock_beta_bp( end,idx) = mean(fooof_prestim.bandpowers(4),'omitnan');
+            stay_lock_beta_bp(end,idx)  = mean(fooof_prestim.bandpowers(4),'omitnan');
             stay_lock_gamma_bp(end,idx) = mean(fooof_prestim.bandpowers(5),'omitnan');
         end
         eval(strcat("leave_",num2str(max(patch_trial_len)-idx),"= pop_select(ep_dat,'trial',leave_lock_trial_idxs(~isnan(leave_lock_trial_idxs(:,", ...
@@ -291,11 +306,11 @@ function [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs)
     %     eval(strcat("leave_lock_fooof_prestim = eeg_fooof(leave_",num2str(max(patch_trial_len)-idx),",'channel',[1:ep_dat.nbchan],[-1 0]*1000,100,freqs,fooof_settings);"));
         fooof_prestim = cell2mat(leave_lock_fooof_prestim.etc.FOOOF_results(chan_idx));
     %     leave_lock_slopes(1,idx) = fooof_prestim(chan_idx).aperiodic_params(end);
-        leave_lock_slopes(end,end-idx+1) = fooof_prestim.aperiodic_params(end);
+        leave_lock_slopes(end,end-idx+1)   = fooof_prestim.aperiodic_params(end);
         leave_lock_delta_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(1),'omitnan');
         leave_lock_theta_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(2),'omitnan');
         leave_lock_alpha_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(3),'omitnan');
-        leave_lock_beta_bp( end,end-idx+1) = mean(fooof_prestim.bandpowers(4),'omitnan');
+        leave_lock_beta_bp(end,end-idx+1)  = mean(fooof_prestim.bandpowers(4),'omitnan');
         leave_lock_gamma_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(5),'omitnan');
     end
     % single trials
@@ -310,23 +325,23 @@ function [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs)
                 eval(strcat("stay_",num2str(patch_idx),"_",num2str(idx),".xmin=-1;stay_",num2str(patch_idx),"_",num2str(idx),".xmax=1.9660;"));
                 eval(strcat("stay_fooof_prestim = eeg_fooof(stay_",num2str(patch_idx),"_",num2str(idx),",'channel',",num2str(chan_idx),",[-1 0]*1000,100,freqs,fooof_settings);"))
                 fooof_prestim = cell2mat(stay_fooof_prestim.etc.FOOOF_results(chan_idx));
-                stay_lock_slopes(patch_idx,idx) = fooof_prestim.aperiodic_params(end);
-                stay_lock_delta_bp( patch_idx,idx) = mean(fooof_prestim.bandpowers(1),'omitnan');
-                stay_lock_theta_bp( patch_idx,idx) = mean(fooof_prestim.bandpowers(2),'omitnan');
-                stay_lock_alpha_bp( patch_idx,idx) = mean(fooof_prestim.bandpowers(3),'omitnan');
-                stay_lock_beta_bp(  patch_idx,idx) = mean(fooof_prestim.bandpowers(4),'omitnan');
-                stay_lock_gamma_bp( patch_idx,idx) = mean(fooof_prestim.bandpowers(5),'omitnan');
+                stay_lock_slopes(patch_idx,idx)   = fooof_prestim.aperiodic_params(end);
+                stay_lock_delta_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(1),'omitnan');
+                stay_lock_theta_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(2),'omitnan');
+                stay_lock_alpha_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(3),'omitnan');
+                stay_lock_beta_bp(patch_idx,idx)  = mean(fooof_prestim.bandpowers(4),'omitnan');
+                stay_lock_gamma_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(5),'omitnan');
             end
             eval(strcat("leave_",num2str(patch_idx),"_",num2str(idx-1),"= pop_select(patch,'trial',leave_trial_idx-idx+1);"));
             eval(strcat("leave_",num2str(patch_idx),"_",num2str(idx-1),".xmin=-1;leave_",num2str(patch_idx),"_",num2str(idx-1),".xmax=1.9660;"));
             eval(strcat("leave_fooof_prestim = eeg_fooof(leave_",num2str(patch_idx),"_",num2str(idx-1),",'channel',",num2str(chan_idx),",[-1 0]*1000,100,freqs,fooof_settings);"))
             fooof_prestim = cell2mat(leave_fooof_prestim.etc.FOOOF_results(chan_idx));
-            leave_lock_slopes(patch_idx,end-idx+1) = fooof_prestim.aperiodic_params(end);
-            leave_lock_delta_bp( patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(1),'omitnan');
-            leave_lock_theta_bp( patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(2),'omitnan');
-            leave_lock_alpha_bp( patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(3),'omitnan');
-            leave_lock_beta_bp(  patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(4),'omitnan');
-            leave_lock_gamma_bp( patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(5),'omitnan');        
+            leave_lock_slopes(patch_idx,end-idx+1)   = fooof_prestim.aperiodic_params(end);
+            leave_lock_delta_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(1),'omitnan');
+            leave_lock_theta_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(2),'omitnan');
+            leave_lock_alpha_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(3),'omitnan');
+            leave_lock_beta_bp(patch_idx,end-idx+1)  = mean(fooof_prestim.bandpowers(4),'omitnan');
+            leave_lock_gamma_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(5),'omitnan');        
         end
     end
 
@@ -349,10 +364,16 @@ function [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs)
     fprintf('SpecParam Done!\n')
 end    
 
-function fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data)
+function fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data,varargin)
     eval(strcat("[",data_flag,"_err,",data_flag,"]=std(plot_data(1:end-1,:),1,1,'omitnan');"));
     eval(strcat("err_data=",data_flag,"_err;"));
-    fig=figure();hold on;
+    if length(varargin)==0
+        fig=figure();hold on;
+        ax=gca;
+    else
+        ax=varargin{1};
+        fig=ax.Parent;hold on;
+    end
     x = [1:size(stay_lock_data,2)+size(leave_lock_data,2)];
     xticks(1:size(stay_lock_data,2)+size(leave_lock_data,2));
     xticklabels([1:size(stay_lock_data,2) size(leave_lock_data,2)-1:-1:0]);
@@ -363,22 +384,24 @@ function fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leav
     displaynames = [displaynames {'Patch Average'}];
     p = [];
     for idx=1:num_patches
-        p = [p plot(x,plot_data(idx,:),'Marker','+','LineStyle',':','LineWidth',1)];
+        p = [p plot(ax,x,plot_data(idx,:),'Marker','+','LineStyle',':','LineWidth',1)];
     end
-    p = [p plot(x,plot_data(end,:),'Marker','o','LineWidth',2.5,'Color','#77AC30');];
-    errorbar(x,plot_data(end,:),err_data,'LineWidth',1,'Color','#A2142F');
-    legend(p,displaynames);hold off;
+    p = [p plot(ax,x,plot_data(end,:),'Marker','o','LineWidth',2.5,'Color','#77AC30');];
+    errorbar(ax,x,plot_data(end,:),err_data,'LineWidth',1,'Color','#A2142F');
+%     legend(p,displaynames);
+%     ax = gca;%hold off;
 end
 
-function fig=run_plot(ep_dat,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs)
+function [stay_lock_res,leave_lock_res] = run_plot(ep_dat,data_flag,ylab,chan_idx,freqs,replot_flag,varargin)
     leave_trial_idxs = get_leave_idx(ep_dat);
     first_stay_idxs = [1 leave_trial_idxs(1:end-1)+1];
     patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idxs,leave_trial_idxs,'UniformOutput',false);
     num_patches = size(patch_trial_idxs,2);
-    patch_trial_len = cell2mat(cellfun(@length,patch_trial_idxs,'UniformOutput',false));
-
-    [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs);
-
+    if ~replot_flag
+        [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs);
+    else
+        global stay_lock_res; global leave_lock_res
+    end
     eval(strcat("stay_lock_data = stay_lock_res.",data_flag,";"));
     frac_nan=sum(isnan(stay_lock_data),1)/(size(stay_lock_data,1)-1);
     stay_lock_data=stay_lock_data(:,frac_nan<=0.25);
@@ -390,5 +413,6 @@ function fig=run_plot(ep_dat,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs)
     leave_lock_data=leave_lock_data(:,int8(size(leave_lock_data,2)/2):end);
     
     plot_data = [stay_lock_data leave_lock_data];
-    fig=frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data);
+    fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data,varargin{1});
+    ax = gca;
 end    
