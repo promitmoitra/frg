@@ -107,101 +107,97 @@ postlong_epoch = pop_epoch(postlongEEG,lock_event,epoch_trange);
 %% SpecParam
 channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));chan_idx = cz_idx;
 
+big_fig_exp = figure('Name',strcat(num2str(subid)," ",channel));
+
 stress_flag='pre'; tt_flag='short';
 eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-global stay_lock_res; global leave_lock_res;
-
-fig1=figure(); hold on;
-axs_exp=[];
-for idx=1:4
-    axs_exp=[axs_exp subplot(2,2,idx)];
-end
-fig1 = axs_exp(1).Parent;
-
-fig2=figure();hold on;
-axs_beta=[];
-for idx=1:4
-    axs_beta=[axs_beta subplot(2,2,idx)];
-end
-fig2 = axs_beta(1).Parent;
 
 data_flag = "slopes"; ylab = "Aperiodic exponent";
-[stay_lock_res,leave_lock_res] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs,false,axs_exp(1));
-% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-% fig.Name= figname;
-% title(figname);
-%savefig
-%save stay_lock_res,leave_lock_res
-
-data_flag = "beta_bp"; ylab = "Beta band power";
-[stay_lock_res,leave_lock_res] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs,true,axs_beta(1));
-% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-% fig.Name= figname;
-% title(figname);
-% %savefig
-% %save stay_lock_res,leave_lock_res
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
+title(strcat(stress_flag," ",tt_flag));
+plot_ax = fig.get('CurrentAxes');
+ax1_exp = copyobj(plot_ax,big_fig_exp);
 
 stress_flag='pre'; tt_flag='long';
 eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
 
-data_flag = "slopes"; ylab = "Aperiodic exponent";
-[stay_lock_res,leave_lock_res] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs,false,axs_exp(2));
-% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-% fig.Name= figname;
-% title(figname);
-%savefig
-%save stay_lock_res,leave_lock_res
+% data_flag = "slopes"; ylab = "Aperiodic exponent";
+[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
+title(strcat(stress_flag," ",tt_flag));
+plot_ax = fig.get('CurrentAxes');
+ax2_exp = copyobj(plot_ax,big_fig_exp);
 
-data_flag = "beta_bp"; ylab = "Beta band power";
-[stay_lock_res,leave_lock_res] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs,true,axs_beta(2));
-% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-% fig.Name= figname;
-% title(figname);
-%savefig
-%save stay_lock_res,leave_lock_res
+stress_flag='post'; tt_flag='short';
+eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+
+% data_flag = "slopes"; ylab = "Aperiodic exponent";
+[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
+title(strcat(stress_flag," ",tt_flag));
+plot_ax = fig.get('CurrentAxes');
+ax3_exp = copyobj(plot_ax,big_fig_exp);
+
+stress_flag='post'; tt_flag='long';
+eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+
+% data_flag = "slopes"; ylab = "Aperiodic exponent";
+[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
+title(strcat(stress_flag," ",tt_flag));
+plot_ax = fig.get('CurrentAxes');
+ax4_exp = copyobj(plot_ax,big_fig_exp);
+
+figure(big_fig_exp);
+subplot(2,2,1,ax1_exp);
+subplot(2,2,2,ax2_exp);
+subplot(2,2,3,ax3_exp);
+subplot(2,2,4,ax4_exp);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 
-% stress_flag='post'; tt_flag='short';
-% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-% 
-% data_flag = "slopes"; ylab = "Aperiodic exponent";
-% fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-% fig.Name= figname;
-% title(figname);
-% %savefig
-% %save stay_lock_res,leave_lock_res
-% 
-% data_flag = "beta_bp"; ylab = "Beta band power";
-% fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-% fig.Name= figname;
-% title(figname);
-% %savefig
-% %save stay_lock_res,leave_lock_res
-% 
-% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% stress_flag='post'; tt_flag='long';
-% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-% 
-% data_flag = "slopes"; ylab = "Aperiodic exponent";
-% fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-% fig.Name= figname;
-% title(figname);
-% %savefig
-% %save stay_lock_res,leave_lock_res
-% 
-% data_flag = "beta_bp"; ylab = "Beta band power";
-% fig=run_plot(epoch_data,stress_flag,tt_flag,data_flag,ylab,chan_idx,freqs);
-% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-% fig.Name= figname;
-% title(figname);
-% %savefig
-% %save stay_lock_res,leave_lock_res
+big_fig_beta = figure('Name',strcat(num2str(subid)," ",channel),'Visible','off');
+
+stress_flag='pre'; tt_flag='short';
+eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+
+data_flag = "beta_bp"; ylab = "Beta band power";
+[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
+title(strcat(stress_flag," ",tt_flag));
+plot_ax = fig.get('CurrentAxes');
+ax1_beta = copyobj(plot_ax,big_fig_beta);
+
+stress_flag='pre'; tt_flag='long';
+eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+
+data_flag = "beta_bp"; ylab = "Beta band power";
+[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
+title(strcat(stress_flag," ",tt_flag));
+plot_ax = fig.get('CurrentAxes');
+ax2_beta = copyobj(plot_ax,big_fig_beta);
+
+stress_flag='post'; tt_flag='short';
+eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+
+data_flag = "beta_bp"; ylab = "Beta band power";
+[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
+title(strcat(stress_flag," ",tt_flag));
+plot_ax = fig.get('CurrentAxes');
+ax3_beta = copyobj(plot_ax,big_fig_beta);
+
+stress_flag='post'; tt_flag='long';
+eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+
+data_flag = "beta_bp"; ylab = "Beta band power";
+[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
+title(strcat(stress_flag," ",tt_flag));
+plot_ax = fig.get('CurrentAxes');
+ax4_beta = copyobj(plot_ax,big_fig_beta);
+
+%savefig
+%save stay_lock_res,leave_lock_res
+
+figure(big_fig_beta);
+subplot(2,2,1,ax1_beta);
+subplot(2,2,2,ax2_beta);
+subplot(2,2,3,ax3_beta);
+subplot(2,2,4,ax4_beta);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -313,6 +309,7 @@ function [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs)
         leave_lock_beta_bp(end,end-idx+1)  = mean(fooof_prestim.bandpowers(4),'omitnan');
         leave_lock_gamma_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(5),'omitnan');
     end
+
     % single trials
     for patch_idx=1:num_patches
         first_stay_idx=1;leave_trial_idx=patch_trial_len(patch_idx);
@@ -364,24 +361,19 @@ function [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs)
     fprintf('SpecParam Done!\n')
 end    
 
-function fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data,varargin)
+function fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data)
     eval(strcat("[",data_flag,"_err,",data_flag,"]=std(plot_data(1:end-1,:),1,1,'omitnan');"));
     eval(strcat("err_data=",data_flag,"_err;"));
-    if length(varargin)==0
-        fig=figure();hold on;
-        ax=gca;
-    else
-        ax=varargin{1};
-        fig=ax.Parent;hold on;
-    end
+    fig=figure(); hold on; ax=gca;
     x = [1:size(stay_lock_data,2)+size(leave_lock_data,2)];
-    xticks(1:size(stay_lock_data,2)+size(leave_lock_data,2));
-    xticklabels([1:size(stay_lock_data,2) size(leave_lock_data,2)-1:-1:0]);
-    xlabel("Trials (Stay1 + i | Leave - i)");
-    ylabel(ylab);
-    xline(size(stay_lock_data,2)+0.5,'--k','LineWidth',2)
-    displaynames = arrayfun(@(x)sprintf('Patch %d',x),1:size(plot_data,1)-1,'uni',0);
-    displaynames = [displaynames {'Patch Average'}];
+    xticks(ax,x);
+    xticklabels(ax,[1:size(stay_lock_data,2) size(leave_lock_data,2)-1:-1:0]);
+    xlabel(ax,"Trials (Stay1 + i | Leave - i)");
+    ylabel(ax,ylab);
+    xline(ax,size(stay_lock_data,2)+0.5,'--k','LineWidth',2)
+
+%     displaynames = arrayfun(@(x)sprintf('Patch %d',x),1:size(plot_data,1)-1,'uni',0);
+%     displaynames = [displaynames {'Patch Average'}];
     p = [];
     for idx=1:num_patches
         p = [p plot(ax,x,plot_data(idx,:),'Marker','+','LineStyle',':','LineWidth',1)];
@@ -392,16 +384,14 @@ function fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leav
 %     ax = gca;%hold off;
 end
 
-function [stay_lock_res,leave_lock_res] = run_plot(ep_dat,data_flag,ylab,chan_idx,freqs,replot_flag,varargin)
+function [stay_lock_res,leave_lock_res,fig] = run_plot(ep_dat,data_flag,ylab,chan_idx,freqs)
     leave_trial_idxs = get_leave_idx(ep_dat);
     first_stay_idxs = [1 leave_trial_idxs(1:end-1)+1];
     patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idxs,leave_trial_idxs,'UniformOutput',false);
     num_patches = size(patch_trial_idxs,2);
-    if ~replot_flag
-        [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs);
-    else
-        global stay_lock_res; global leave_lock_res
-    end
+    
+    [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs);
+    
     eval(strcat("stay_lock_data = stay_lock_res.",data_flag,";"));
     frac_nan=sum(isnan(stay_lock_data),1)/(size(stay_lock_data,1)-1);
     stay_lock_data=stay_lock_data(:,frac_nan<=0.25);
@@ -413,6 +403,6 @@ function [stay_lock_res,leave_lock_res] = run_plot(ep_dat,data_flag,ylab,chan_id
     leave_lock_data=leave_lock_data(:,int8(size(leave_lock_data,2)/2):end);
     
     plot_data = [stay_lock_data leave_lock_data];
-    fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data,varargin{1});
-    ax = gca;
+    fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data);
+    fig.Visible='off';
 end    
