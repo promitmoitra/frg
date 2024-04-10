@@ -1,7 +1,7 @@
 %% Foraging EEG analysis:
-cd 'C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1';
+% cd 'C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1';
 clear;clc;eeglab;close;
-cd 'C:\Users\promitmoitra\Documents\GitHub\frg\'
+% cd 'C:\Users\promitmoitra\Documents\GitHub\frg\'
 
 % data_path = '/home/decision_lab/work/frg/foraging/Neuroflow/';
 % badids = [37532 38058 39862 42125 43543 45194 46037 47678 47744 47801 48238 48278];
@@ -9,6 +9,7 @@ cd 'C:\Users\promitmoitra\Documents\GitHub\frg\'
 % subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
 % %%% sub 47801 has no poststress long travel time markers TRIGGER EVENT U
 % 
+global subid;
 subid = 7873;%subids(subids==7873);
 
 %%% Main loop
@@ -49,6 +50,7 @@ preEEG = clean_data_with_zapline_plus_eeglab_wrapper(preEEG,struct('noisefreqs',
 postEEG = clean_data_with_zapline_plus_eeglab_wrapper(postEEG,struct('noisefreqs',60,'chunkLength',0,'adaptiveNremove',true, ...
                                                     'fixedNremove',1,'plotResults',0));
 
+global freqs
 freqs = [1 100];
 wtype = 'hamming'; df = 1; m = pop_firwsord(wtype,EEG.srate,df);
 preEEG = pop_firws(preEEG,'wtype',wtype,'ftype','bandpass','fcutoff',freqs,'forder',m);
@@ -97,6 +99,8 @@ epoch_trange = [-1 2]; %baseline = [-1 0]*1000;
 preEEG_epoch = pop_epoch(preEEG,lock_event,epoch_trange);
 postEEG_epoch = pop_epoch(postEEG,lock_event,epoch_trange);
 
+% global preshort_epoch; global prelong_epoch; global postshort_epoch; global postlong_epoch;
+
 preshort_epoch = pop_epoch(preshortEEG,lock_event,epoch_trange);
 prelong_epoch = pop_epoch(prelongEEG,lock_event,epoch_trange);
 postshort_epoch = pop_epoch(postshortEEG,lock_event,epoch_trange);
@@ -105,109 +109,113 @@ postlong_epoch = pop_epoch(postlongEEG,lock_event,epoch_trange);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% SpecParam
+global channel; global chan_idx;
 % channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));chan_idx = cz_idx;
-% channel = 'C3';c3_idx = find(strcmp({EEG.chanlocs.labels},{channel}));chan_idx = c3_idx;
-channel = 'C4';c4_idx = find(strcmp({EEG.chanlocs.labels},{channel}));chan_idx = c4_idx;
+channel = 'C3';c3_idx = find(strcmp({EEG.chanlocs.labels},{channel}));chan_idx = c3_idx;
+% channel = 'C4';c4_idx = find(strcmp({EEG.chanlocs.labels},{channel}));chan_idx = c4_idx;
 
-data_flag = "slopes"; ylab = '';%"Aperiodic exponent";
-big_fig_exp = figure('Name',strcat(num2str(subid)," ",channel));
+big_plot("slopes")
+big_plot("beta_bp")
 
-stress_flag='pre'; tt_flag='short';
-eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
-title(strcat(stress_flag," ",tt_flag));
-plot_ax = fig.get('CurrentAxes');
-ax1_exp = copyobj(plot_ax,big_fig_exp);
-
-stress_flag='pre'; tt_flag='long';
-eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
-title(strcat(stress_flag," ",tt_flag));
-plot_ax = fig.get('CurrentAxes');
-ax2_exp = copyobj(plot_ax,big_fig_exp);
-
-stress_flag='post'; tt_flag='short';
-eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
-title(strcat(stress_flag," ",tt_flag));
-plot_ax = fig.get('CurrentAxes');
-ax3_exp = copyobj(plot_ax,big_fig_exp);
-
-stress_flag='post'; tt_flag='long';
-eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
-title(strcat(stress_flag," ",tt_flag));
-plot_ax = fig.get('CurrentAxes');
-ax4_exp = copyobj(plot_ax,big_fig_exp);
-
-linkaxes([ax1_exp ax2_exp ax3_exp ax4_exp])
-figure(big_fig_exp);
-subplot(2,2,1,ax1_exp);
-subplot(2,2,2,ax2_exp);
-subplot(2,2,3,ax3_exp);
-subplot(2,2,4,ax4_exp);
-
-han=axes(big_fig_exp,'visible','off'); 
-han.Title.Visible='on';
-han.XLabel.Visible='on';
-han.YLabel.Visible='on';
-ylabel(han,"Aperiodic exponent");
-xlabel(han,"Trials (Stay1 + i | Leave - i)");
-title(han,strcat(num2str(subid)," ",channel));
-saveas(gcf,strcat("./fig/",num2str(subid),"_slopes.png"));
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-data_flag = "beta_bp"; ylab = '';%"Beta band power";
-big_fig_beta = figure('Name',strcat(num2str(subid)," ",channel),'Visible','off');
-
-stress_flag='pre'; tt_flag='short';
-eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
-title(strcat(stress_flag," ",tt_flag));
-plot_ax = fig.get('CurrentAxes');
-ax1_beta = copyobj(plot_ax,big_fig_beta);
-
-stress_flag='pre'; tt_flag='long';
-eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
-title(strcat(stress_flag," ",tt_flag));
-plot_ax = fig.get('CurrentAxes');
-ax2_beta = copyobj(plot_ax,big_fig_beta);
-
-stress_flag='post'; tt_flag='short';
-eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
-title(strcat(stress_flag," ",tt_flag));
-plot_ax = fig.get('CurrentAxes');
-ax3_beta = copyobj(plot_ax,big_fig_beta);
-
-stress_flag='post'; tt_flag='long';
-eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-[stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,ylab,chan_idx,freqs);
-title(strcat(stress_flag," ",tt_flag));
-plot_ax = fig.get('CurrentAxes');
-ax4_beta = copyobj(plot_ax,big_fig_beta);
-
-%save stay_lock_res,leave_lock_res
-
-linkaxes([ax1_beta ax2_beta ax3_beta ax4_beta])
-figure(big_fig_beta);
-subplot(2,2,1,ax1_beta);
-subplot(2,2,2,ax2_beta);
-subplot(2,2,3,ax3_beta);
-subplot(2,2,4,ax4_beta);
-
-han=axes(big_fig_beta,'visible','off'); 
-han.Title.Visible='on';
-han.XLabel.Visible='on';
-han.YLabel.Visible='on';
-ylabel(han,"Beta band power (\muV^2)");
-xlabel(han,"Trials (Stay1 + i | Leave - i)");
-title(han,strcat(num2str(subid)," ",channel));
-saveas(gcf,strcat("./fig/",num2str(subid),"_beta.png"));
+% data_flag = "slopes";
+% big_fig_exp = figure('Name',strcat(num2str(subid)," ",channel));
+% 
+% stress_flag='pre'; tt_flag='short';
+% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+% [stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag);%,chan_idx,freqs);
+% title(strcat(stress_flag," ",tt_flag));
+% plot_ax = fig.get('CurrentAxes');
+% ax1_exp = copyobj(plot_ax,big_fig_exp);
+% 
+% stress_flag='pre'; tt_flag='long';
+% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+% [stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag);%,chan_idx,freqs);
+% title(strcat(stress_flag," ",tt_flag));
+% plot_ax = fig.get('CurrentAxes');
+% ax2_exp = copyobj(plot_ax,big_fig_exp);
+% 
+% stress_flag='post'; tt_flag='short';
+% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+% [stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag);%,chan_idx,freqs);
+% title(strcat(stress_flag," ",tt_flag));
+% plot_ax = fig.get('CurrentAxes');
+% ax3_exp = copyobj(plot_ax,big_fig_exp);
+% 
+% stress_flag='post'; tt_flag='long';
+% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+% [stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag);%,chan_idx,freqs);
+% title(strcat(stress_flag," ",tt_flag));
+% plot_ax = fig.get('CurrentAxes');
+% ax4_exp = copyobj(plot_ax,big_fig_exp);
+% 
+% linkaxes([ax1_exp ax2_exp ax3_exp ax4_exp])
+% figure(big_fig_exp);
+% subplot(2,2,1,ax1_exp);
+% subplot(2,2,2,ax2_exp);
+% subplot(2,2,3,ax3_exp);
+% subplot(2,2,4,ax4_exp);
+% 
+% han=axes(big_fig_exp,'visible','off'); 
+% han.Title.Visible='on';
+% han.XLabel.Visible='on';
+% han.YLabel.Visible='on';
+% ylabel(han,"Aperiodic exponent");
+% xlabel(han,"Trials (Stay1 + i | Leave - i)");
+% title(han,strcat(num2str(subid)," ",channel),'Position',[0.5 1.05 0.5]);
+% saveas(gcf,strcat("./fig/",num2str(subid),"_",channel,"_slopes.png"));
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% data_flag = "beta_bp";
+% big_fig_beta = figure('Name',strcat(num2str(subid)," ",channel),'Visible','off');
+% 
+% stress_flag='pre'; tt_flag='short';
+% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+% [stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,chan_idx,freqs);
+% title(strcat(stress_flag," ",tt_flag));
+% plot_ax = fig.get('CurrentAxes');
+% ax1_beta = copyobj(plot_ax,big_fig_beta);
+% 
+% stress_flag='pre'; tt_flag='long';
+% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+% [stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,chan_idx,freqs);
+% title(strcat(stress_flag," ",tt_flag));
+% plot_ax = fig.get('CurrentAxes');
+% ax2_beta = copyobj(plot_ax,big_fig_beta);
+% 
+% stress_flag='post'; tt_flag='short';
+% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+% [stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,chan_idx,freqs);
+% title(strcat(stress_flag," ",tt_flag));
+% plot_ax = fig.get('CurrentAxes');
+% ax3_beta = copyobj(plot_ax,big_fig_beta);
+% 
+% stress_flag='post'; tt_flag='long';
+% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+% [stay_lock_res,leave_lock_res,fig] = run_plot(epoch_data,data_flag,chan_idx,freqs);
+% title(strcat(stress_flag," ",tt_flag));
+% plot_ax = fig.get('CurrentAxes');
+% ax4_beta = copyobj(plot_ax,big_fig_beta);
+% 
+% %save stay_lock_res,leave_lock_res
+% 
+% linkaxes([ax1_beta ax2_beta ax3_beta ax4_beta])
+% figure(big_fig_beta);
+% subplot(2,2,1,ax1_beta);
+% subplot(2,2,2,ax2_beta);
+% subplot(2,2,3,ax3_beta);
+% subplot(2,2,4,ax4_beta);
+% 
+% han=axes(big_fig_beta,'visible','off'); 
+% han.Title.Visible='on';
+% han.XLabel.Visible='on';
+% han.YLabel.Visible='on';
+% ylabel(han,"Beta band power (\muV^2)",'Position',[-0.1 0.5 0]);
+% xlabel(han,"Trials (Stay1 + i | Leave - i)");
+% title(han,strcat(num2str(subid)," ",channel),'Position',[0.5 1.05 0.5]);
+% saveas(gcf,strcat("./fig/",num2str(subid),"_",channel,"_beta.png"));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -257,7 +265,8 @@ function leave_idx = get_leave_idx(ep_dat)
     end
 end
 
-function [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs)
+function [stay_lock_res, leave_lock_res] = specparam(ep_dat)
+    global chan_idx; global freqs;
     leave_trial_idxs = get_leave_idx(ep_dat);
     first_stay_idxs = [1 leave_trial_idxs(1:end-1)+1];
     patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idxs,leave_trial_idxs,'UniformOutput',false);
@@ -319,37 +328,37 @@ function [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs)
         leave_lock_gamma_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(5),'omitnan');
     end
 
-    % % single trials
-    % for patch_idx=1:num_patches
-    %     first_stay_idx=1;leave_trial_idx=patch_trial_len(patch_idx);
-    %     patch = pop_select(ep_dat,'trial',patch_trial_idxs{patch_idx});
-    %     patch.xmin=-1;patch.xmax=1.996;
-    % 
-    %     for idx = first_stay_idx:leave_trial_idx
-    %         if idx~=leave_trial_idx
-    %             eval(strcat("stay_",num2str(patch_idx),"_",num2str(idx),"= pop_select(patch,'trial',idx);"));
-    %             eval(strcat("stay_",num2str(patch_idx),"_",num2str(idx),".xmin=-1;stay_",num2str(patch_idx),"_",num2str(idx),".xmax=1.9660;"));
-    %             eval(strcat("stay_fooof_prestim = eeg_fooof(stay_",num2str(patch_idx),"_",num2str(idx),",'channel',",num2str(chan_idx),",[-1 0]*1000,100,freqs,fooof_settings);"))
-    %             fooof_prestim = cell2mat(stay_fooof_prestim.etc.FOOOF_results(chan_idx));
-    %             stay_lock_slopes(patch_idx,idx)   = fooof_prestim.aperiodic_params(end);
-    %             stay_lock_delta_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(1),'omitnan');
-    %             stay_lock_theta_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(2),'omitnan');
-    %             stay_lock_alpha_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(3),'omitnan');
-    %             stay_lock_beta_bp(patch_idx,idx)  = mean(fooof_prestim.bandpowers(4),'omitnan');
-    %             stay_lock_gamma_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(5),'omitnan');
-    %         end
-    %         eval(strcat("leave_",num2str(patch_idx),"_",num2str(idx-1),"= pop_select(patch,'trial',leave_trial_idx-idx+1);"));
-    %         eval(strcat("leave_",num2str(patch_idx),"_",num2str(idx-1),".xmin=-1;leave_",num2str(patch_idx),"_",num2str(idx-1),".xmax=1.9660;"));
-    %         eval(strcat("leave_fooof_prestim = eeg_fooof(leave_",num2str(patch_idx),"_",num2str(idx-1),",'channel',",num2str(chan_idx),",[-1 0]*1000,100,freqs,fooof_settings);"))
-    %         fooof_prestim = cell2mat(leave_fooof_prestim.etc.FOOOF_results(chan_idx));
-    %         leave_lock_slopes(patch_idx,end-idx+1)   = fooof_prestim.aperiodic_params(end);
-    %         leave_lock_delta_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(1),'omitnan');
-    %         leave_lock_theta_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(2),'omitnan');
-    %         leave_lock_alpha_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(3),'omitnan');
-    %         leave_lock_beta_bp(patch_idx,end-idx+1)  = mean(fooof_prestim.bandpowers(4),'omitnan');
-    %         leave_lock_gamma_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(5),'omitnan');        
-    %     end
-    % end
+    % single trials
+    for patch_idx=1:num_patches
+        first_stay_idx=1;leave_trial_idx=patch_trial_len(patch_idx);
+        patch = pop_select(ep_dat,'trial',patch_trial_idxs{patch_idx});
+        patch.xmin=-1;patch.xmax=1.996;
+    
+        for idx = first_stay_idx:leave_trial_idx
+            if idx~=leave_trial_idx
+                eval(strcat("stay_",num2str(patch_idx),"_",num2str(idx),"= pop_select(patch,'trial',idx);"));
+                eval(strcat("stay_",num2str(patch_idx),"_",num2str(idx),".xmin=-1;stay_",num2str(patch_idx),"_",num2str(idx),".xmax=1.9660;"));
+                eval(strcat("stay_fooof_prestim = eeg_fooof(stay_",num2str(patch_idx),"_",num2str(idx),",'channel',",num2str(chan_idx),",[-1 0]*1000,100,freqs,fooof_settings);"))
+                fooof_prestim = cell2mat(stay_fooof_prestim.etc.FOOOF_results(chan_idx));
+                stay_lock_slopes(patch_idx,idx)   = fooof_prestim.aperiodic_params(end);
+                stay_lock_delta_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(1),'omitnan');
+                stay_lock_theta_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(2),'omitnan');
+                stay_lock_alpha_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(3),'omitnan');
+                stay_lock_beta_bp(patch_idx,idx)  = mean(fooof_prestim.bandpowers(4),'omitnan');
+                stay_lock_gamma_bp(patch_idx,idx) = mean(fooof_prestim.bandpowers(5),'omitnan');
+            end
+            eval(strcat("leave_",num2str(patch_idx),"_",num2str(idx-1),"= pop_select(patch,'trial',leave_trial_idx-idx+1);"));
+            eval(strcat("leave_",num2str(patch_idx),"_",num2str(idx-1),".xmin=-1;leave_",num2str(patch_idx),"_",num2str(idx-1),".xmax=1.9660;"));
+            eval(strcat("leave_fooof_prestim = eeg_fooof(leave_",num2str(patch_idx),"_",num2str(idx-1),",'channel',",num2str(chan_idx),",[-1 0]*1000,100,freqs,fooof_settings);"))
+            fooof_prestim = cell2mat(leave_fooof_prestim.etc.FOOOF_results(chan_idx));
+            leave_lock_slopes(patch_idx,end-idx+1)   = fooof_prestim.aperiodic_params(end);
+            leave_lock_delta_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(1),'omitnan');
+            leave_lock_theta_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(2),'omitnan');
+            leave_lock_alpha_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(3),'omitnan');
+            leave_lock_beta_bp(patch_idx,end-idx+1)  = mean(fooof_prestim.bandpowers(4),'omitnan');
+            leave_lock_gamma_bp(patch_idx,end-idx+1) = mean(fooof_prestim.bandpowers(5),'omitnan');        
+        end
+    end
 
     stay_lock_res = struct();
     stay_lock_res.slopes  =  stay_lock_slopes;
@@ -370,48 +379,106 @@ function [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs)
     fprintf('SpecParam Done!\n')
 end    
 
-function fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data)
+function fig = frg_plot(num_patches,data_flag,plot_data,stay_lock_data,leave_lock_data)
     eval(strcat("[",data_flag,"_err,",data_flag,"]=std(plot_data(1:end-1,:),1,1,'omitnan');"));
     eval(strcat("err_data=",data_flag,"_err;"));
     fig=figure('Visible','off'); hold on; ax=gca;
     x = [1:size(stay_lock_data,2)+size(leave_lock_data,2)];
     xticks(ax,x);
     xticklabels(ax,[1:size(stay_lock_data,2) size(leave_lock_data,2)-1:-1:0]);
-    % xlabel(ax,"Trials (Stay1 + i | Leave - i)");
-    % ylabel(ax,ylab);
     xline(ax,size(stay_lock_data,2)+0.5,'--k','LineWidth',2)
-
 %     displaynames = arrayfun(@(x)sprintf('Patch %d',x),1:size(plot_data,1)-1,'uni',0);
 %     displaynames = [displaynames {'Patch Average'}];
     p = [];
-    % for idx=1:num_patches
-    %     p = [p plot(ax,x,plot_data(idx,:),'Marker','+','LineStyle',':','LineWidth',1)];
-    % end
+    for idx=1:num_patches
+        p = [p plot(ax,x,plot_data(idx,:),'Marker','+','LineStyle',':','LineWidth',1)];
+    end
     p = [p plot(ax,x,plot_data(end,:),'Marker','o','LineWidth',2.5,'Color','#77AC30');];
     errorbar(ax,x,plot_data(end,:),err_data,'LineWidth',1,'Color','#A2142F');
 %     legend(p,displaynames);
-%     ax = gca;
     hold off;
 end
 
-function [stay_lock_res,leave_lock_res,fig] = run_plot(ep_dat,data_flag,ylab,chan_idx,freqs)
+function [stay_lock_res,leave_lock_res,fig] = run_plot(ep_dat,data_flag)
+    global chan_idx; global freqs;
     leave_trial_idxs = get_leave_idx(ep_dat);
     first_stay_idxs = [1 leave_trial_idxs(1:end-1)+1];
     patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idxs,leave_trial_idxs,'UniformOutput',false);
     num_patches = size(patch_trial_idxs,2);
     
-    [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs);
+    [stay_lock_res, leave_lock_res] = specparam(ep_dat);%,chan_idx,freqs);
     
     eval(strcat("stay_lock_data = stay_lock_res.",data_flag,";"));
     % frac_nan=sum(isnan(stay_lock_data),1)/(size(stay_lock_data,1)-1);
     % stay_lock_data=stay_lock_data(:,frac_nan<=0.25);
-    stay_lock_data=stay_lock_data(:,1:int8(size(stay_lock_data,2)/4));
+    stay_lock_data=stay_lock_data(:,1:int8(size(stay_lock_data,2)/2));
     
     eval(strcat("leave_lock_data = leave_lock_res.",data_flag,";"));
     % frac_nan=sum(isnan(leave_lock_data),1)/(size(leave_lock_data,1)-1);
     % leave_lock_data=leave_lock_data(:,frac_nan<=0.25);
-    leave_lock_data=leave_lock_data(:,int8(size(leave_lock_data,2)-2):end);
+    leave_lock_data=leave_lock_data(:,int8(size(leave_lock_data,2)-3):end);
     
     plot_data = [stay_lock_data leave_lock_data];
-    fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data);
+    fig = frg_plot(num_patches,data_flag,plot_data,stay_lock_data,leave_lock_data);
 end    
+
+function big_plot(data_flag)
+    global subid; global channel;
+    disp(subid)
+    global preshort_epoch; global prelong_epoch; global postshort_epoch; global postlong_epoch;
+    big_fig = figure('Name',strcat(num2str(subid)," ",channel));
+    
+    stress_flag='pre'; tt_flag='short';
+    eval(strcat("ep_dat = ",stress_flag,tt_flag,"_epoch;"));
+%     ep_dat = preshort_epoch;
+    [stay_lock_res,leave_lock_res,fig] = run_plot(ep_dat,data_flag);
+    title(strcat(stress_flag," ",tt_flag));
+    plot_ax = fig.get('CurrentAxes');
+    ax1 = copyobj(plot_ax,big_fig);
+    
+    stress_flag='pre'; tt_flag='long';
+    eval(strcat("ep_dat = ",stress_flag,tt_flag,"_epoch;"));
+%     ep_dat = prelong_epoch;
+    [stay_lock_res,leave_lock_res,fig] = run_plot(ep_dat,data_flag);
+    title(strcat(stress_flag," ",tt_flag));
+    plot_ax = fig.get('CurrentAxes');
+    ax2 = copyobj(plot_ax,big_fig);
+    
+    stress_flag='post'; tt_flag='short';
+    eval(strcat("ep_dat = ",stress_flag,tt_flag,"_epoch;"));
+%     ep_dat = postshort_epoch;
+    [stay_lock_res,leave_lock_res,fig] = run_plot(ep_dat,data_flag);
+    title(strcat(stress_flag," ",tt_flag));
+    plot_ax = fig.get('CurrentAxes');
+    ax3 = copyobj(plot_ax,big_fig);
+    
+    stress_flag='post'; tt_flag='long';
+    eval(strcat("ep_dat = ",stress_flag,tt_flag,"_epoch;"));
+%     ep_dat = postlong_epoch;
+    [stay_lock_res,leave_lock_res,fig] = run_plot(ep_dat,data_flag);
+    title(strcat(stress_flag," ",tt_flag));
+    plot_ax = fig.get('CurrentAxes');
+    ax4 = copyobj(plot_ax,big_fig);
+    
+    linkaxes([ax1 ax2 ax3 ax4])
+    figure(big_fig);
+    subplot(2,2,1,ax1);
+    subplot(2,2,2,ax2);
+    subplot(2,2,3,ax3);
+    subplot(2,2,4,ax4);
+    
+    han=axes(big_fig,'visible','off'); 
+    han.Title.Visible='on';
+    han.XLabel.Visible='on';
+    han.YLabel.Visible='on';
+    title(han,strcat(num2str(subid)," ",channel),'Position',[0.5 1.05 0.5]);
+    xlabel(han,"Trials (Stay1 + i | Leave - i)");    
+    if data_flag == "slopes"
+        ylabel(han,"Aperiodic exponent",'Position',[-0.1 0.5 0]);
+        fname = strcat("./fig/",num2str(subid),"_",channel,"_slopes.png");
+    elseif data_flag == "beta_bp"
+        ylabel(han,"Beta band power (\muV^2)",'Position',[-0.1 0.5 0]);
+        fname = strcat("./fig/",num2str(subid),"_",channel,"_beta_bp.png");        
+    end
+    saveas(gcf,fname);
+end
