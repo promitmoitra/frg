@@ -154,6 +154,9 @@ han.YLabel.Visible='on';
 ylabel(han,"Aperiodic exponent");
 xlabel(han,"Trials (Stay1 + i | Leave - i)");
 title(han,strcat(num2str(subid)," ",channel));
+saveas(gcf,strcat("./fig/",num2str(subid),"_slopes.png"));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -188,7 +191,6 @@ title(strcat(stress_flag," ",tt_flag));
 plot_ax = fig.get('CurrentAxes');
 ax4_beta = copyobj(plot_ax,big_fig_beta);
 
-%savefig
 %save stay_lock_res,leave_lock_res
 
 linkaxes([ax1_beta ax2_beta ax3_beta ax4_beta])
@@ -205,6 +207,7 @@ han.YLabel.Visible='on';
 ylabel(han,"Beta band power (\muV^2)");
 xlabel(han,"Trials (Stay1 + i | Leave - i)");
 title(han,strcat(num2str(subid)," ",channel));
+saveas(gcf,strcat("./fig/",num2str(subid),"_beta.png"));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -370,7 +373,7 @@ end
 function fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data)
     eval(strcat("[",data_flag,"_err,",data_flag,"]=std(plot_data(1:end-1,:),1,1,'omitnan');"));
     eval(strcat("err_data=",data_flag,"_err;"));
-    fig=figure(); hold on; ax=gca;
+    fig=figure('Visible','off'); hold on; ax=gca;
     x = [1:size(stay_lock_data,2)+size(leave_lock_data,2)];
     xticks(ax,x);
     xticklabels(ax,[1:size(stay_lock_data,2) size(leave_lock_data,2)-1:-1:0]);
@@ -387,7 +390,8 @@ function fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leav
     p = [p plot(ax,x,plot_data(end,:),'Marker','o','LineWidth',2.5,'Color','#77AC30');];
     errorbar(ax,x,plot_data(end,:),err_data,'LineWidth',1,'Color','#A2142F');
 %     legend(p,displaynames);
-%     ax = gca;%hold off;
+%     ax = gca;
+    hold off;
 end
 
 function [stay_lock_res,leave_lock_res,fig] = run_plot(ep_dat,data_flag,ylab,chan_idx,freqs)
@@ -410,5 +414,4 @@ function [stay_lock_res,leave_lock_res,fig] = run_plot(ep_dat,data_flag,ylab,cha
     
     plot_data = [stay_lock_data leave_lock_data];
     fig = frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data);
-    fig.Visible='off';
 end    
