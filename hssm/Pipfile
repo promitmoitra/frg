@@ -69,6 +69,8 @@ tzdata = "==2023.3"
 urllib3 = "==2.0.4"
 xarray = "==2023.8.0"
 xarray-einstats = "==0.6.0"
+ipykernel = "*"
+ipympl = "*"
 
 [dev-packages]
 
