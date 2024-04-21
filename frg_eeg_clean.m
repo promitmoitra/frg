@@ -3,12 +3,13 @@
 clear;clc;eeglab;close;
 % cd 'C:\Users\promitmoitra\Documents\GitHub\frg\'
 
-data_path = '/home/decision_lab/work/frg/foraging/Neuroflow/';
-badids = [37532 38058 39862 42125 43543 45194 46037 47678 47744 47801 48238 48278];
-%%% badids are [37532 38058 39862 42125 43543 '45194' 46037 '47678' 47744 47801 48238 48278];
-subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
-%%% sub 47801 has no poststress long travel time markers TRIGGER EVENT U
+% data_path = '/home/decision_lab/work/frg/foraging/Neuroflow/';
+% badids = [37532 38058 39862 42125 43543 45194 46037 47678 47744 47801 48238 48278];
+% %%% badids are [37532 38058 39862 42125 43543 '45194' 46037 '47678' 47744 47801 48238 48278];
+% subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
+% %%% sub 47801 has no poststress long travel time markers TRIGGER EVENT U
 
+global subid
 subid = 7873;%subids(subids==7873);
 
 %% Main loop
@@ -18,7 +19,7 @@ subid = 7873;%subids(subids==7873);
 % data_file = dir(fullfile(data_path,string(subid),'*EEG','*.edf'));
 % data_file_path = fullfile(data_file(end).folder,data_file(end).name);
 
-data_file_path = ['./data/',num2str(subid),'.edf'];
+data_file_path = ['./data/',num2str(subid),'/',num2str(subid),'.edf'];
 EEG = pop_biosig(data_file_path,'channels',1:19);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -113,10 +114,12 @@ channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));chan_idx =
 % channel = 'C3';c3_idx = find(strcmp({EEG.chanlocs.labels},{channel}));chan_idx = c3_idx;
 % channel = 'C4';c4_idx = find(strcmp({EEG.chanlocs.labels},{channel}));chan_idx = c4_idx;
 
-big_plot("slopes")
-big_plot("beta_bp")
+% big_plot("slopes")
+% big_plot("beta_bp")
 % end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+run_specpar
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%==Function Definitions==%%%%%%%%%%%%%%%%%%%%%%%%%
 function [leave_idxs,entry_idxs,patch_trials,num_patch,patch_len] = get_frg_trials(ep_dat)
@@ -139,7 +142,7 @@ function [stay_lock_res,leave_lock_res] = specparam(ep_dat)
     global chan_idx; global freqs;
     [~,~,patch_trial_idxs,num_patches,patch_trial_len] = get_frg_trials(ep_dat);
     
-    fooof_settings = struct('peak_width_limits',[2 10],'max_n_peaks',inf,'min_peak_height',0, ...
+    fooof_setting = struct('peak_width_limits',[2 10],'max_n_peaks',inf,'min_peak_height',0, ...
                             'peak_threshold',2,'aperiodic_mode','fixed','verbose',false);
     
     stay_lock_res = struct();
@@ -159,7 +162,9 @@ function [stay_lock_res,leave_lock_res] = specparam(ep_dat)
     leave_lock_res.gamma_bp = nan(num_patches+1,max(patch_trial_len));
 
 %     % % patch trials alligned stay_lock and leave_lock
-%     % % POP_SPECTOPO in 'ERP' mode (eeg_fooof.m). Concatenated in 'EEG' mode.
+% %   % % POP_SPECTOPO mode in eeg_fooof.m: 
+% %   % % 'ERP' mode *first averages* epochs (ERP) and then calculates PSD.
+% %   % % 'EEG' mode *first concatenates* epochs and then calculates PSD.
 %     stay_lock_trial_idxs = reshape(cell2mat(cellfun(@(x) [x(1:end-1) nan(1,max(patch_trial_len)-size(x(1:end-1),2)-1)], ...
 %                                         patch_trial_idxs,'UniformOutput',false)), ...
 %                                         max(patch_trial_len)-1,num_patches)';
@@ -246,11 +251,52 @@ function [stay_lock_res,leave_lock_res] = specparam(ep_dat)
     fprintf('SpecParam Done!\n')
 end    
 
+function run_specpar
+    global subid; global channel;
+    global preshort_epoch; global prelong_epoch;
+    global postshort_epoch; global postlong_epoch;
+
+    stress_flag='pre'; tt_flag='short';
+    eval(strcat("ep_dat = ",stress_flag,tt_flag,"_epoch;"));
+    [~,~,patch_trials,num_patches,~] = get_frg_trials(ep_dat);   
+    [stay_lock_res,leave_lock_res] = specparam(ep_dat);
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_stay_lock_res.mat'),'-struct','stay_lock_res')
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_leave_lock_res.mat'),'-struct','leave_lock_res')
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',stress_flag,tt_flag,'_patch_trials.mat'),'patch_trials')
+
+    stress_flag='pre'; tt_flag='long';
+    eval(strcat("ep_dat = ",stress_flag,tt_flag,"_epoch;"));
+    [~,~,patch_trials,num_patches,~] = get_frg_trials(ep_dat);   
+    [stay_lock_res,leave_lock_res] = specparam(ep_dat);
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_stay_lock_res.mat'),'-struct','stay_lock_res')
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_leave_lock_res.mat'),'-struct','leave_lock_res')
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',stress_flag,tt_flag,'_patch_trials.mat'),'patch_trials')
+
+    stress_flag='post'; tt_flag='short';
+    eval(strcat("ep_dat = ",stress_flag,tt_flag,"_epoch;"));
+    [~,~,patch_trials,num_patches,~] = get_frg_trials(ep_dat);   
+    [stay_lock_res,leave_lock_res] = specparam(ep_dat);
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_stay_lock_res.mat'),'-struct','stay_lock_res')
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_leave_lock_res.mat'),'-struct','leave_lock_res')
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',stress_flag,tt_flag,'_patch_trials.mat'),'patch_trials')
+
+    stress_flag='post'; tt_flag='long';
+    eval(strcat("ep_dat = ",stress_flag,tt_flag,"_epoch;"));    
+    [~,~,patch_trials,num_patches,~] = get_frg_trials(ep_dat);   
+    [stay_lock_res,leave_lock_res] = specparam(ep_dat);
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_stay_lock_res.mat'),'-struct','stay_lock_res')
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_leave_lock_res.mat'),'-struct','leave_lock_res')
+    save(strcat('./data/',num2str(subid),'/',num2str(subid),'_',stress_flag,tt_flag,'_patch_trials.mat'),'patch_trials')
+
+end
+
 function [stay_lock_res,leave_lock_res,fig] = run_plot(ep_dat,data_flag)
     global chan_idx; global freqs;
     [~,~,~,num_patches,~] = get_frg_trials(ep_dat);
     
     [stay_lock_res,leave_lock_res] = specparam(ep_dat);
+    save(strcat(num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_stay_lock_res.mat'),'-struct','stay_lock_res')
+    save(strcat(num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_leave_lock_res.mat'),'-struct','leave_lock_res')
     
     eval(strcat("stay_lock_data = stay_lock_res.",data_flag,";"));
     frac_nan=sum(isnan(stay_lock_data),1)/(size(stay_lock_data,1)-1);
@@ -293,13 +339,17 @@ function big_plot(data_flag)
     title(strcat(stress_flag," ",tt_flag));
     plot_ax = fig.get('CurrentAxes');
     ax1 = copyobj(plot_ax,big_fig);
-    
+    save(strcat(num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_stay_lock_res.mat'),'-struct','stay_lock_res')
+    save(strcat(num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_leave_lock_res.mat'),'-struct','leave_lock_res')
+
     stress_flag='pre'; tt_flag='long';
     eval(strcat("ep_dat = ",stress_flag,tt_flag,"_epoch;"));
     [stay_lock_res,leave_lock_res,fig] = run_plot(ep_dat,data_flag);
     title(strcat(stress_flag," ",tt_flag));
     plot_ax = fig.get('CurrentAxes');
     ax2 = copyobj(plot_ax,big_fig);
+    save(strcat(num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_stay_lock_res.mat'),'-struct','stay_lock_res')
+    save(strcat(num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_leave_lock_res.mat'),'-struct','leave_lock_res')
     
     stress_flag='post'; tt_flag='short';
     eval(strcat("ep_dat = ",stress_flag,tt_flag,"_epoch;"));
@@ -307,6 +357,8 @@ function big_plot(data_flag)
     title(strcat(stress_flag," ",tt_flag));
     plot_ax = fig.get('CurrentAxes');
     ax3 = copyobj(plot_ax,big_fig);
+    save(strcat(num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_stay_lock_res.mat'),'-struct','stay_lock_res')
+    save(strcat(num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_leave_lock_res.mat'),'-struct','leave_lock_res')
     
     stress_flag='post'; tt_flag='long';
     eval(strcat("ep_dat = ",stress_flag,tt_flag,"_epoch;"));
@@ -314,6 +366,8 @@ function big_plot(data_flag)
     title(strcat(stress_flag," ",tt_flag));
     plot_ax = fig.get('CurrentAxes');
     ax4 = copyobj(plot_ax,big_fig);
+    save(strcat(num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_stay_lock_res.mat'),'-struct','stay_lock_res')
+    save(strcat(num2str(subid),'_',channel,'_',stress_flag,tt_flag,'_leave_lock_res.mat'),'-struct','leave_lock_res')
     
     linkaxes([ax1 ax2 ax3 ax4],'y')
     figure(big_fig);
