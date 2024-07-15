@@ -8,7 +8,7 @@ clear;clc;eeglab;close;
 % subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
 % %%% sub 47801 has no poststress long travel time markers TRIGGER EVENT U
 % 
-subid = 15083;%subids(subids==7873);
+subid = 15089;%subids(subids==7873);
 
 %%% Main loop
 % for idx = 1:length(subids)
@@ -17,7 +17,7 @@ subid = 15083;%subids(subids==7873);
 % data_file = dir(fullfile(data_path,string(subid),'*EEG','*.edf'));
 % data_file_path = fullfile(data_file(end).folder,data_file(end).name);
 
-data_file_path = ['./data/',num2str(subid),'.edf'];
+data_file_path = ['./data/',num2str(subid),'/',num2str(subid),'.edf'];
 EEG = pop_biosig(data_file_path,'channels',1:19);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -254,6 +254,8 @@ post_events = {postEEG.event.type};
 post_short_end = find(strcmp(post_events,'TRIGGER EVENT T'));post_short_end = post_short_end(end);
 post_long_end = find(strcmp(post_events,'TRIGGER EVENT U'));post_long_end = post_long_end(end);
 
+sprintf('preshort end:%f \nprelong end:%f \npostshort end:%f \npostlong end:%f \n',pre_short_end,pre_long_end,post_short_end,post_long_end)
+
 pre_short_end_time = preEEG.event(pre_short_end).latency/EEG.srate;
 pre_long_end_time = preEEG.event(pre_long_end).latency/EEG.srate;
 post_short_end_time = postEEG.event(post_short_end).latency/EEG.srate;
@@ -411,19 +413,19 @@ postlong_epoch = pop_epoch(postlongEEG,lock_event,epoch_trange);
 % stress_flag='pre'; tt_flag='short';
 % stress_flag='pre'; tt_flag='long';
 % stress_flag='post'; tt_flag='short';
-stress_flag='post'; tt_flag='long';
-
-eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
-channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));
-chan_idx = cz_idx;
-
-leave_trial_idxs = get_leave_idx(epoch_data);
-first_stay_idxs = [1 leave_trial_idxs(1:end-1)+1];
-patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idxs,leave_trial_idxs,'UniformOutput',false);
-num_patches = size(patch_trial_idxs,2);
-patch_trial_len = cell2mat(cellfun(@length,patch_trial_idxs,'UniformOutput',false));
-
-[stay_lock_res, leave_lock_res] = specparam(epoch_data,chan_idx,freqs);
+% stress_flag='post'; tt_flag='long';
+% 
+% eval(strcat("epoch_data = ",stress_flag,tt_flag,"_epoch;"));
+% channel = 'CZ';cz_idx = find(strcmp({EEG.chanlocs.labels},{channel}));
+% chan_idx = cz_idx;
+% 
+% leave_trial_idxs = get_leave_idx(epoch_data);
+% first_stay_idxs = [1 leave_trial_idxs(1:end-1)+1];
+% patch_trial_idxs = arrayfun(@(f,g) (f:g),first_stay_idxs,leave_trial_idxs,'UniformOutput',false);
+% num_patches = size(patch_trial_idxs,2);
+% patch_trial_len = cell2mat(cellfun(@length,patch_trial_idxs,'UniformOutput',false));
+% 
+% [stay_lock_res, leave_lock_res] = specparam(epoch_data,chan_idx,freqs);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Select, trim and concatenate data for plotting
@@ -468,25 +470,25 @@ patch_trial_len = cell2mat(cellfun(@length,patch_trial_idxs,'UniformOutput',fals
 % data_flag = "delta_bp"; ylab = "Delta band power";
 % data_flag = "theta_bp"; ylab = "Theta band power";
 % data_flag = "alpha_bp"; ylab = "Alpha band power";
-data_flag = "beta_bp"; ylab = "Beta band power";
+% data_flag = "beta_bp"; ylab = "Beta band power";
 % data_flag = "gamma_bp"; ylab = "Gamma band power";
 
-eval(strcat("stay_lock_data = stay_lock_res.",data_flag,";"));
-frac_nan=sum(isnan(stay_lock_data),1)/(size(stay_lock_data,1)-1);
-stay_lock_data=stay_lock_data(:,frac_nan<=0.25);
-stay_lock_data=stay_lock_data(:,1:int8(size(stay_lock_data,2)/2));
-
-eval(strcat("leave_lock_data = leave_lock_res.",data_flag,";"));
-frac_nan=sum(isnan(leave_lock_data),1)/(size(leave_lock_data,1)-1);
-leave_lock_data=leave_lock_data(:,frac_nan<=0.25);
-leave_lock_data=leave_lock_data(:,int8(size(leave_lock_data,2)/2):end);
-
-plot_data = [stay_lock_data leave_lock_data];
-
-fig=frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data);
-figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
-fig.Name= figname;
-title(figname);
+% eval(strcat("stay_lock_data = stay_lock_res.",data_flag,";"));
+% frac_nan=sum(isnan(stay_lock_data),1)/(size(stay_lock_data,1)-1);
+% stay_lock_data=stay_lock_data(:,frac_nan<=0.25);
+% stay_lock_data=stay_lock_data(:,1:int8(size(stay_lock_data,2)/2));
+% 
+% eval(strcat("leave_lock_data = leave_lock_res.",data_flag,";"));
+% frac_nan=sum(isnan(leave_lock_data),1)/(size(leave_lock_data,1)-1);
+% leave_lock_data=leave_lock_data(:,frac_nan<=0.25);
+% leave_lock_data=leave_lock_data(:,int8(size(leave_lock_data,2)/2):end);
+% 
+% plot_data = [stay_lock_data leave_lock_data];
+% 
+% fig=frg_plot(num_patches,data_flag,ylab,plot_data,stay_lock_data,leave_lock_data);
+% figname = strcat(num2str(subid)," ",channel," ",stress_flag," ",tt_flag);
+% fig.Name= figname;
+% title(figname);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -523,10 +525,12 @@ title(figname);
 % save(strcat('/home/decision_lab/work/eegnet/arl-eegmodels/',str(subid),'_pre.mat'),'-struct','preEEG_epoch')
 % save(strcat('/home/decision_lab/work/eegnet/arl-eegmodels/',str(subid),'_post.mat'),'-struct','postEEG_epoch')
 % Dataframe for hddm:
-% preT = gendf(subid,preEEG_epoch,1,pre_short_end,pre_long_end);
-% postT = gendf(subid,postEEG_epoch,0,post_short_end,post_long_end);
+preT = gendf(subid,preEEG_epoch,'pre',pre_short_end,pre_long_end);
+sprintf('%f \n %f',pre_short_end,pre_long_end)
+sprintf('pre done############################################################')
+% postT = gendf(subid,postEEG_epoch,'post',post_short_end,post_long_end);
 % subT = [preT;postT];
-% title = strcat('/home/decision_lab/work/data_hddm/l0_eeg_hddm/raw/',string(subid),'_eeg_hddm.csv');
+% title = strcat('./',string(subid),'_eeg_hddm.csv');
 % writetable(subT,title);
 % end
 %% scratchpad
@@ -596,36 +600,36 @@ function [stay_lock_res, leave_lock_res] = specparam(ep_dat,chan_idx,freqs)
     leave_lock_beta_bp   = nan(num_patches+1,max(patch_trial_len));
     leave_lock_gamma_bp  = nan(num_patches+1,max(patch_trial_len));
 
-    % patch trials alligned stay_lock and leave_lock 
-    for idx=1:max(patch_trial_len)
-        if idx ~= max(patch_trial_len)
-            eval(strcat("stay_",num2str(idx),"= pop_select(ep_dat,'trial',stay_lock_trial_idxs(~isnan(stay_lock_trial_idxs(:,",num2str(idx),")),",num2str(idx),"));"));
-            eval(strcat("stay_",num2str(idx),".xmin=-1;stay_",num2str(idx),".xmax=+1.9960;"))
-            eval(strcat("stay_lock_fooof_prestim = eeg_fooof(stay_",num2str(idx),",'channel',",num2str(chan_idx),",[-1 0]*1000,100,freqs,fooof_settings);"));
-        %     eval(strcat("stay_lock_fooof_prestim = eeg_fooof(stay_",num2str(idx),",'channel',[1:ep_dat.nbchan],[-1 0]*1000,100,freqs,fooof_settings);"));
-            fooof_prestim = cell2mat(stay_lock_fooof_prestim.etc.FOOOF_results(chan_idx));
-        %     stay_lock_slopes(1,idx) = fooof_prestim(chan_idx).aperiodic_params(end);
-            stay_lock_slopes(end,idx) = fooof_prestim.aperiodic_params(end);
-            stay_lock_delta_bp(end,idx) = mean(fooof_prestim.bandpowers(1),'omitnan');
-            stay_lock_theta_bp(end,idx) = mean(fooof_prestim.bandpowers(2),'omitnan');
-            stay_lock_alpha_bp(end,idx) = mean(fooof_prestim.bandpowers(3),'omitnan');
-            stay_lock_beta_bp( end,idx) = mean(fooof_prestim.bandpowers(4),'omitnan');
-            stay_lock_gamma_bp(end,idx) = mean(fooof_prestim.bandpowers(5),'omitnan');
-        end
-        eval(strcat("leave_",num2str(max(patch_trial_len)-idx),"= pop_select(ep_dat,'trial',leave_lock_trial_idxs(~isnan(leave_lock_trial_idxs(:,", ...
-                    num2str(idx),")),",num2str(idx),"));"));
-        eval(strcat("leave_",num2str(max(patch_trial_len)-idx),".xmin=-1;leave_",num2str(max(patch_trial_len)-idx),".xmax=1.9960;"))
-        eval(strcat("leave_lock_fooof_prestim = eeg_fooof(leave_",num2str(max(patch_trial_len)-idx),",'channel',",num2str(chan_idx),",[-1 0]*1000,100,freqs,fooof_settings);"));
-    %     eval(strcat("leave_lock_fooof_prestim = eeg_fooof(leave_",num2str(max(patch_trial_len)-idx),",'channel',[1:ep_dat.nbchan],[-1 0]*1000,100,freqs,fooof_settings);"));
-        fooof_prestim = cell2mat(leave_lock_fooof_prestim.etc.FOOOF_results(chan_idx));
-    %     leave_lock_slopes(1,idx) = fooof_prestim(chan_idx).aperiodic_params(end);
-        leave_lock_slopes(end,end-idx+1) = fooof_prestim.aperiodic_params(end);
-        leave_lock_delta_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(1),'omitnan');
-        leave_lock_theta_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(2),'omitnan');
-        leave_lock_alpha_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(3),'omitnan');
-        leave_lock_beta_bp( end,end-idx+1) = mean(fooof_prestim.bandpowers(4),'omitnan');
-        leave_lock_gamma_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(5),'omitnan');
-    end
+%     % patch trials alligned stay_lock and leave_lock 
+%     for idx=1:max(patch_trial_len)
+%         if idx ~= max(patch_trial_len)
+%             eval(strcat("stay_",num2str(idx),"= pop_select(ep_dat,'trial',stay_lock_trial_idxs(~isnan(stay_lock_trial_idxs(:,",num2str(idx),")),",num2str(idx),"));"));
+%             eval(strcat("stay_",num2str(idx),".xmin=-1;stay_",num2str(idx),".xmax=+1.9960;"))
+%             eval(strcat("stay_lock_fooof_prestim = eeg_fooof(stay_",num2str(idx),",'channel',",num2str(chan_idx),",[-1 0]*1000,100,freqs,fooof_settings);"));
+%         %     eval(strcat("stay_lock_fooof_prestim = eeg_fooof(stay_",num2str(idx),",'channel',[1:ep_dat.nbchan],[-1 0]*1000,100,freqs,fooof_settings);"));
+%             fooof_prestim = cell2mat(stay_lock_fooof_prestim.etc.FOOOF_results(chan_idx));
+%         %     stay_lock_slopes(1,idx) = fooof_prestim(chan_idx).aperiodic_params(end);
+%             stay_lock_slopes(end,idx) = fooof_prestim.aperiodic_params(end);
+%             stay_lock_delta_bp(end,idx) = mean(fooof_prestim.bandpowers(1),'omitnan');
+%             stay_lock_theta_bp(end,idx) = mean(fooof_prestim.bandpowers(2),'omitnan');
+%             stay_lock_alpha_bp(end,idx) = mean(fooof_prestim.bandpowers(3),'omitnan');
+%             stay_lock_beta_bp( end,idx) = mean(fooof_prestim.bandpowers(4),'omitnan');
+%             stay_lock_gamma_bp(end,idx) = mean(fooof_prestim.bandpowers(5),'omitnan');
+%         end
+%         eval(strcat("leave_",num2str(max(patch_trial_len)-idx),"= pop_select(ep_dat,'trial',leave_lock_trial_idxs(~isnan(leave_lock_trial_idxs(:,", ...
+%                     num2str(idx),")),",num2str(idx),"));"));
+%         eval(strcat("leave_",num2str(max(patch_trial_len)-idx),".xmin=-1;leave_",num2str(max(patch_trial_len)-idx),".xmax=1.9960;"))
+%         eval(strcat("leave_lock_fooof_prestim = eeg_fooof(leave_",num2str(max(patch_trial_len)-idx),",'channel',",num2str(chan_idx),",[-1 0]*1000,100,freqs,fooof_settings);"));
+%     %     eval(strcat("leave_lock_fooof_prestim = eeg_fooof(leave_",num2str(max(patch_trial_len)-idx),",'channel',[1:ep_dat.nbchan],[-1 0]*1000,100,freqs,fooof_settings);"));
+%         fooof_prestim = cell2mat(leave_lock_fooof_prestim.etc.FOOOF_results(chan_idx));
+%     %     leave_lock_slopes(1,idx) = fooof_prestim(chan_idx).aperiodic_params(end);
+%         leave_lock_slopes(end,end-idx+1) = fooof_prestim.aperiodic_params(end);
+%         leave_lock_delta_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(1),'omitnan');
+%         leave_lock_theta_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(2),'omitnan');
+%         leave_lock_alpha_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(3),'omitnan');
+%         leave_lock_beta_bp( end,end-idx+1) = mean(fooof_prestim.bandpowers(4),'omitnan');
+%         leave_lock_gamma_bp(end,end-idx+1) = mean(fooof_prestim.bandpowers(5),'omitnan');
+%     end
     % single trials
     for patch_idx=1:num_patches
         first_stay_idx=1;leave_trial_idx=patch_trial_len(patch_idx);
@@ -711,90 +715,129 @@ end
 %     [pl,ll,wl,sl] = findpeaks(-y_fit,x);
 % end
 
-% function T = gendf(subid,epoch_data,preflag,short_end,long_end)
+function trial_data = ext_data(pt,trial_num,leave_lock_res,data_flag)
+    patch_lens = cell2mat(cellfun(@length, pt, 'UniformOutput',0));
+    index = cellfun(@(x) find(x==trial_num), pt, 'UniformOutput',0);
+    patch_finder = [];
+    for patch=1:length(index)
+        patch_finder(end+1)=length(index{patch});
+    end
+    patch_num = find(patch_finder);
+    trial_data=0;
+    if ~isempty(patch_num)
+        patch_trial_num = index{patch_num};
+        eval(strcat('patch_data_inv = leave_lock_res.',data_flag,'(patch_num,end:-1:1);'));
+        patch_data_inv = patch_data_inv(1:patch_lens(patch_num));
+        patch_data = patch_data_inv(end:-1:1);
+        trial_data = patch_data(patch_trial_num);
+    end
+end
+
+function T = gendf(subid,epoch_data,preflag,short_end,long_end)
 %     init_idx = find(epoch_data.times==300); fin_idx = find(epoch_data.times==500);
-%     channel = 'CZ';cz_idx = find(strcmp({epoch_data.chanlocs.labels},{channel}));
+    channel = 'CZ';cz_idx = find(strcmp({epoch_data.chanlocs.labels},{channel}));
 %     channel = 'C3';c3_idx = find(strcmp({epoch_data.chanlocs.labels},{channel}));
 %     channel = 'C4';c4_idx = find(strcmp({epoch_data.chanlocs.labels},{channel}));
-%     
-%     subj_idx = repmat(subid,epoch_data.trials,1);
-%     
-%     if preflag
-%         condition = repmat(1,epoch_data.trials,1);
-%     else
-%         condition = repmat(2,epoch_data.trials,1);
-%     end
-%     
-%     travel_time = zeros(epoch_data.trials,1);
-% %     response_stay_default = ones(epoch_data.trials,1);
-%     response = zeros(epoch_data.trials,1);
-% 
-% %     rt = zeros(epoch_data.trials,1);
+    
+    subj_idx = repmat(subid,epoch_data.trials,1);
+    
+    if strcmp(preflag,'pre')
+        condition = repmat(1,epoch_data.trials,1);
+    elseif strcmp(preflag,'post')
+        condition = repmat(2,epoch_data.trials,1);
+    end
+    
+    travel_time = zeros(epoch_data.trials,1);
+%     response_stay_default = ones(epoch_data.trials,1);
+    response = zeros(epoch_data.trials,1);
+    beta_bp = zeros(epoch_data.trials,1);
+
+%     rt = zeros(epoch_data.trials,1);
 %     max_cz = zeros(epoch_data.trials,1);
 %     max_c3 = zeros(epoch_data.trials,1);
 %     max_c4 = zeros(epoch_data.trials,1);
-% 
-% %     erp = mean(mean(epoch_data.data([cz_idx,c3_idx,c4_idx],:,:),3),1);
-% %     x = transpose(epoch_data.times(init_idx:fin_idx));
-% %     y = transpose(erp(init_idx:fin_idx));
-% %     [f,~] = fit(x,y,'fourier4');
-% %     y_fit = f(x);
-% %     [ph,lh,wh,sh] = findpeaks(y_fit,x);
-% %     [pl,ll,wl,sl] = findpeaks(-y_fit,x);
-% 
-%     for i = 1:epoch_data.trials
-%         N_epochevent_idx = find(strcmp(epoch_data.epoch(i).eventtype,'TRIGGER EVENT N'),1);
-%         N_event_idx = epoch_data.epoch(i).event(N_epochevent_idx);
-%         N_urevent_idx = cell2mat(epoch_data.epoch(i).eventurevent(N_epochevent_idx));
-% 
-%         if short_end<long_end
-%             if N_event_idx>0 && N_event_idx<short_end
-%                 travel_time(i,1) = 5;
-%             else
-%                 travel_time(i,1) = 20;
-%             end
+
+%     erp = mean(mean(epoch_data.data([cz_idx,c3_idx,c4_idx],:,:),3),1);
+%     x = transpose(epoch_data.times(init_idx:fin_idx));
+%     y = transpose(erp(init_idx:fin_idx));
+%     [f,~] = fit(x,y,'fourier4');
+%     y_fit = f(x);
+%     [ph,lh,wh,sh] = findpeaks(y_fit,x);
+%     [pl,ll,wl,sl] = findpeaks(-y_fit,x);
+    
+    short_leave_lock_res = load(strcat('./data/',num2str(subid),'/',num2str(subid),'_CZ_',preflag,'short_leave_lock_res.mat'));
+    short_pt = load(strcat('./data/',num2str(subid),'/',num2str(subid),'_',preflag,'short_patch_trials.mat'));
+    long_leave_lock_res = load(strcat('./data/',num2str(subid),'/',num2str(subid),'_CZ_',preflag,'long_leave_lock_res.mat'));
+    long_pt = load(strcat('./data/',num2str(subid),'/',num2str(subid),'_',preflag,'long_patch_trials.mat'));
+    data_flag = "beta_bp";
+    for i = 1:epoch_data.trials
+        N_epochevent_idx = find(strcmp(epoch_data.epoch(i).eventtype,'TRIGGER EVENT N'),1);
+        N_event_idx = epoch_data.epoch(i).event(N_epochevent_idx);
+        N_urevent_idx = cell2mat(epoch_data.epoch(i).eventurevent(N_epochevent_idx));
+
+        if short_end<long_end
+            if N_event_idx>0 && N_event_idx<short_end
+                sprintf('short first short:%d',i)
+                travel_time(i,1) = 5;
+                %this is short tt. find i in short_pt.patch_trials, pick up
+                %that patch data from inverted leave_lock_res.beta_bp, invert again and
+                %add to beta_bp column.
+                pt = short_pt.patch_trials; leave_lock_res = short_leave_lock_res;
+                beta_bp(i,1) = ext_data(pt,i,leave_lock_res,data_flag);
+            else
+                sprintf('short first long:%d',i)
+                travel_time(i,1) = 20;
+                pt = long_pt.patch_trials; leave_lock_res = long_leave_lock_res;
+                beta_bp(i,1) = ext_data(pt,i,leave_lock_res,data_flag);
+            end
+        else
+            if N_event_idx>0 && N_event_idx<long_end
+                sprintf('long first long:%d',i)                
+                travel_time(i,1) = 20;
+                pt = long_pt.patch_trials; leave_lock_res = long_leave_lock_res;
+                beta_bp(i,1) = ext_data(pt,i,leave_lock_res,data_flag);
+            else
+                sprintf('long first short:%d',i)                
+                travel_time(i,1) = 5;
+                pt = short_pt.patch_trials; leave_lock_res = short_leave_lock_res;
+                beta_bp(i,1) = ext_data(pt,i,leave_lock_res,data_flag);
+            end
+        end
+
+        if ismember(epoch_data.urevent(N_urevent_idx+1).type,{'TRIGGER EVENT O','TRIGGER EVENT H','condition 22','condition 23','condition 24'})
+            response(i,1) = 1;
+%         elseif strcmp(epoch_data.urevent(N_urevent_idx+1).type,'TRIGGER EVENT R')
+%             response_stay_default(i,1) = 0;
 %         else
-%             if N_event_idx>0 && N_event_idx<long_end
-%                 travel_time(i,1) = 20;
-%             else
-%                 travel_time(i,1) = 5;
-%             end
+%             response_leave_default(i,1) = nan;
+%             response_stay_default(i,1) = nan;
+        end
+    
+%         if sum(strcmp(epoch_data.epoch(i).eventtype,'TRIGGER EVENT O'))
+%             response_leave_default(i,1) = 1;
+%         elseif sum(strcmp(epoch_data.epoch(i).eventtype,'TRIGGER EVENT R'))
+%             response_stay_default(i,1) = 0;
+%             R_epochevent_idx = find(strcmp(epoch_data.epoch(i).eventtype,'TRIGGER EVENT R'));
+%             R_urevent_idx = cell2mat(epoch_data.epoch(i).eventurevent(R_epochevent_idx));
+%             travel_time(i,1) = (epoch_data.urevent(R_urevent_idx+1).latency - epoch_data.urevent(R_urevent_idx).latency)/epoch_data.srate;
 %         end
-% 
-%         if ismember(epoch_data.urevent(N_urevent_idx+1).type,{'TRIGGER EVENT O','TRIGGER EVENT H','condition 22','condition 23','condition 24'})
-%             response(i,1) = 1;
-% %         elseif strcmp(epoch_data.urevent(N_urevent_idx+1).type,'TRIGGER EVENT R')
-% %             response_stay_default(i,1) = 0;
-% %         else
-% %             response_leave_default(i,1) = nan;
-% %             response_stay_default(i,1) = nan;
-%         end
-% 
-% %         if sum(strcmp(epoch_data.epoch(i).eventtype,'TRIGGER EVENT O'))
-% %             response_leave_default(i,1) = 1;
-% %         elseif sum(strcmp(epoch_data.epoch(i).eventtype,'TRIGGER EVENT R'))
-% %             response_stay_default(i,1) = 0;
-% %             R_epochevent_idx = find(strcmp(epoch_data.epoch(i).eventtype,'TRIGGER EVENT R'));
-% %             R_urevent_idx = cell2mat(epoch_data.epoch(i).eventurevent(R_epochevent_idx));
-% %             travel_time(i,1) = (epoch_data.urevent(R_urevent_idx+1).latency - epoch_data.urevent(R_urevent_idx).latency)/epoch_data.srate;
-% %         end
-% %         rt(i,1) = (epoch_data.urevent(N_urevent_idx+1).latency - epoch_data.urevent(N_urevent_idx).latency)/epoch_data.srate;
-% %         rt(i,1) = cell2mat(epoch_data.epoch(i).eventlatency(idx_N+1))/epoch_data.srate;
-% 
-% %         [max_val,max_idx] = max(epoch_data.data(cz_idx,N0_idx:N500_idx,i)); max_idx = max_idx+N0_idx;
-% %         max_cz(i) = mean(epoch_data.data(cz_idx,max_idx-30:max_idx+30,i));
+%         rt(i,1) = (epoch_data.urevent(N_urevent_idx+1).latency - epoch_data.urevent(N_urevent_idx).latency)/epoch_data.srate;
+%         rt(i,1) = cell2mat(epoch_data.epoch(i).eventlatency(idx_N+1))/epoch_data.srate;
+
+%         [max_val,max_idx] = max(epoch_data.data(cz_idx,N0_idx:N500_idx,i)); max_idx = max_idx+N0_idx;
+%         max_cz(i) = mean(epoch_data.data(cz_idx,max_idx-30:max_idx+30,i));
 %         max_cz(i,1) = mean(epoch_data.data(cz_idx,init_idx:fin_idx,i));
-%     
-% %         [max_val,max_idx] = max(epoch_data.data(c3_idx,N0_idx:N500_idx,i)); max_idx = max_idx+N0_idx;
-% %         max_c3(i) = mean(epoch_data.data(c3_idx,max_idx-30:max_idx+30,i));
+    
+%         [max_val,max_idx] = max(epoch_data.data(c3_idx,N0_idx:N500_idx,i)); max_idx = max_idx+N0_idx;
+%         max_c3(i) = mean(epoch_data.data(c3_idx,max_idx-30:max_idx+30,i));
 %         max_c3(i,1) = mean(epoch_data.data(c3_idx,init_idx:fin_idx,i));
-% 
-% %         [max_val,max_idx] = max(epoch_data.data(c4_idx,N0_idx:N500_idx,i)); max_idx = max_idx+N0_idx;
-% %         max_c4(i) = mean(epoch_data.data(c4_idx,max_idx-30:max_idx+30,i));
+
+%         [max_val,max_idx] = max(epoch_data.data(c4_idx,N0_idx:N500_idx,i)); max_idx = max_idx+N0_idx;
+%         max_c4(i) = mean(epoch_data.data(c4_idx,max_idx-30:max_idx+30,i));
 %         max_c4(i,1) = mean(epoch_data.data(c4_idx,init_idx:fin_idx,i));
-%     end
-%     
-% %     T = table(subj_idx,condition,travel_time,response_stay_default,response_leave_default,max_cz,max_c3,max_c4);
-%     T = table(subj_idx,condition,travel_time,response,max_cz,max_c3,max_c4);
-% 
-% end
+    end
+    
+%     T = table(subj_idx,condition,travel_time,response_stay_default,response_leave_default,max_cz,max_c3,max_c4);
+    T = table(subj_idx,condition,travel_time,response,beta_bp);
+
+end

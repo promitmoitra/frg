@@ -10,6 +10,8 @@ __pycache__/
 *.edf
 #channel location file
 *.ced
+#Matlab session temp file
+.asv
 
 # Distribution / packaging
 .Python
