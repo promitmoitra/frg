@@ -5,7 +5,7 @@ clear;clc;eeglab;close;
 
 data_path = '/home/decision_lab/work/frg/foraging/Neuroflow/';
 badids = [37532 38058 39862 42125 43543 45194 46037 47678 47744 47801 48238 48278];
-%%% badids are [37532 38058 39862 42125 43543 '45194' 46037 '47678' 47744 47801 48238 48278];
+%%% badids are [37532 38058 39862 43543 45528 47801 48278];
 subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
 %%% sub 47801 has no poststress long travel time markers TRIGGER EVENT U
 % disp(subids)

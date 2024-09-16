@@ -11,8 +11,9 @@ __pycache__/
 #channel location file
 *.ced
 #Matlab session temp file
-.asv
-
+*.asv
+#csv files
+*.csv
 # Distribution / packaging
 .Python
 build/
