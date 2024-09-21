@@ -10,10 +10,15 @@ current_dir = pwd;
 cd '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
 eeglab;close;
 cd(current_dir)
-
 data_path = strcat(current_dir,'/data/');
 badids = [37532 38058 39862 43543 45528 47801 48278];
-% subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
+processed_ids = dir([data_path,'spec_data/*.mat']);
+proc_fnames = char({processed_ids(:).name});
+for idx = 1:size(proc_fnames,1)
+    proc_id = char(regexp(proc_fnames(idx,:),'[0-9]','match'))';
+    badids(end+1) = str2num(proc_id);
+end    
+subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
 
 %%%%%-New code, no need to read in subids.txt-%%%%%
 % edf_fnames = dir('**/*.edf');
@@ -22,18 +27,16 @@ badids = [37532 38058 39862 43543 45528 47801 48278];
 %%%%%%%%%%%%%%%%%%%%
 % bp_table = table();
 
-subids = [31730 43000];
-% subid = 42125;
+% subids = [7873];
+% subid = 31730;
 %% Main loop begins:
 
-%Comment out for single sub: Set up loop vars
+%%%Comment out for single sub: Set up loop vars
 for idx = 1:length(subids)
 clearvars -except idx subids data_path %data_path_dirs %bp_table
 global subid; subid = subids(idx);
 
-fprintf(repmat('=',1,80))
-disp(subid)
-fprintf(repmat('=',1,80))
+fprintf([repmat('=',1,80),'\n',char(string(subid)),'\n',repmat('=',1,80)])
 
 %%% Load data and channel locations:
 data_file = dir(fullfile(data_path,string(subid),'*.edf'));
@@ -72,13 +75,13 @@ EEG = pop_interp(EEG,origchanlocs);
 EEG = pop_reref(EEG,[]);
 
 %%
-freqs = [0.5 120];
-wtype = 'hamming'; df = 1; m = pop_firwsord(wtype,EEG.srate,df);
-EEG = pop_firws(EEG,'wtype',wtype,'ftype','bandpass','fcutoff',freqs,'forder',m);
-
-EEG = clean_data_with_zapline_plus_eeglab_wrapper(EEG,struct('noisefreqs',60, ...
-                                   'chunkLength',0,'adaptiveNremove',true, ...
-                                   'fixedNremove',1,'plotResults',0));
+% freqs = [0.5 120];
+% wtype = 'hamming'; df = 1; m = pop_firwsord(wtype,EEG.srate,df);
+% EEG = pop_firws(EEG,'wtype',wtype,'ftype','bandpass','fcutoff',freqs,'forder',m);
+% 
+% EEG = clean_data_with_zapline_plus_eeglab_wrapper(EEG,struct('noisefreqs',60, ...
+%                                    'chunkLength',0,'adaptiveNremove',true, ...
+%                                    'fixedNremove',1,'plotResults',0));
 
 % EEG_asr = pop_clean_rawdata(EEG, 'FlatlineCriterion',10,'ChannelCriterion',0.1, ...
 %     'LineNoiseCriterion',4,'Highpass',[0.25 0.75] ,'BurstCriterion',20, ...
@@ -222,12 +225,13 @@ EEG = clean_data_with_zapline_plus_eeglab_wrapper(EEG,struct('noisefreqs',60, ..
 %% Find pre and post stress, short and long timestamps:
 
 all_events = {EEG.event.type};
-% if size(find(ismember(all_events,'TRIGGER EVENT A')),2)>0
-%     pre_start = find(ismember(all_events,'TRIGGER EVENT A'));
-%     pre_start_time = EEG.event(pre_start(1)).latency/EEG.srate;
-% else
-%     pre_start_time=0;
-% end
+if size(find(ismember(all_events,'TRIGGER EVENT A')),2)>0
+    pre_start = find(ismember(all_events,'TRIGGER EVENT A')); pre_start = pre_start(1);
+    pre_start_time = EEG.event(pre_start(1)).latency/EEG.srate;
+else
+    pre_start = 1; pre_start_time=0;
+    fprintf([repmat('=',1,80),'\n','NO TRIGGER EVENT A FOUND!!!\n',repmat('=',1,80),'\n'])
+end
 
 if subid==42125
     block_end_marker = 'condition 20';
@@ -237,9 +241,11 @@ else
     block_end_marker = 'TRIGGER EVENT Z';
 end
 
-pre_start = find(ismember(all_events,'TRIGGER EVENT A'));
-pre_start_time = EEG.event(pre_start(1)).latency/EEG.srate;
-pre_end = find(strcmp(all_events(pre_start:end),block_end_marker));
+if subid==7873
+    pre_end = find(strcmp(all_events,'TRIGGER EVENT B'));
+else    
+    pre_end = find(strcmp(all_events(pre_start:end),block_end_marker));
+end    
 pre_end = pre_end(1)+pre_start;
 pre_end_time = EEG.event(pre_end).latency/EEG.srate;
 pre_timestamp = [pre_start_time,pre_end_time];
