@@ -2,12 +2,14 @@
 clear;clc;
 current_dir = pwd;
 % cd "C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1";
-cd '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
+% cd "C:\Users\Peeusa\OneDrive\Documents\MATLAB\eeglab2023.1";
+% cd '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
 eeglab;close;
 cd(current_dir)
-origchanlocs = readlocs('./live_amp_32.ced');
+% origchanlocs = readlocs('./live_amp_32.ced');
 
 %%
+data_path = 'F:\phd works\experimental data\analysis\final data analysis\eeg_analysis\data\Loop_data\';
 fname = 'p2_import.set';
 % set_files = dir('*.set');
 % fnames = {set_files(:).name};
@@ -19,12 +21,12 @@ fname = 'p2_import.set';
 %%
 EEG = pop_loadset(fname);
 %%
-%add fcz and reref by ch. nos. [29 30]
-EEG.data(end+1,:) = 0;EEG.nbchan = size(EEG.data,1);
-EEG = pop_chanedit(EEG,'load','./live_amp_32.ced');
-EEG = pop_reref(EEG,[29 30]);
-EEG = pop_interp(EEG,origchanlocs);
-EEG = pop_reref(EEG,[]);
+% %add fcz and reref by ch. nos. [29 30]
+% EEG.data(end+1,:) = 0;EEG.nbchan = size(EEG.data,1);
+% EEG = pop_chanedit(EEG,'load','./live_amp_32.ced');
+% EEG = pop_reref(EEG,[29 30]);
+% EEG = pop_interp(EEG,origchanlocs);
+% EEG = pop_reref(EEG,[]);
 
 %% Bandpass, line noise cleaning and ASR:
 %zapline,asr etc.
