@@ -33,7 +33,7 @@ subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,b
 
 %%%Comment out for single sub: Set up loop vars
 for idx = 1:length(subids)
-clearvars -except idx subids data_path %data_path_dirs %bp_table
+clearvars -global -except idx subids data_path %data_path_dirs %bp_table
 global subid; subid = subids(idx);
 
 fprintf([repmat('=',1,80),'\n',char(string(subid)),'\n',repmat('=',1,80)])
@@ -381,55 +381,56 @@ end
 bands = [[1 100];[1 10];[10 100]];
 sel_chans = {'FCz','FZ','CZ'};
 chan_id_fn = cellfun(@(x) ismember(x,sel_chans),{EEG.chanlocs.labels},'UniformOutput',0); %%Completely unnecessary
-chan_idxs = find(cell2mat(chan_id_fn)); chan_idx = chan_idxs(1);
+chan_idxs = find(cell2mat(chan_id_fn)); chan_idx = chan_idxs(2);
+fprintf([repmat('=',1,80),'\n',sel_chans(chan_idx),'\n',repmat('=',1,80),'\n'])
+
 %%
 % for chan_idx = chan_idxs
 %     for idx = 1%:3
-tic;
-        band = bands(1,:);
-        fprintf('Processing pre task resting state...\n')
-        pre_EEG = pop_select(EEG,'time',pre_timestamp);t_epoch=60;
-        pre_EEG = eeg_regepochs(pre_EEG,'recurrence',t_epoch,'limits',[0 t_epoch],'rmbase',NaN);
-        % pre_EEG = pop_rejepoch(pre_EEG,[1 0 0 0],0);
-        [pre_times,pre_freqs,pre_ersp,pre_exponents,pre_offsets,...
-         pre_bp,pre_ap_bp] = ap_exp_ts(pre_EEG,chan_idx,band);
-        
-        fprintf('Processing pre stress short TT resting state...\n')
-        pre_short_EEG = pop_select(EEG,'time',pre_short_timestamp);
-        s_idx = find(ismember({pre_short_EEG.event.type},{'TRIGGER EVENT S'}));
-        s_timestamp = [pre_short_EEG.event(s_idx).latency]/pre_short_EEG.srate;
-        short_patch_durations = [s_timestamp(1),diff(s_timestamp)];
-        pre_short_epoch = pop_epoch(pre_short_EEG,{'TRIGGER EVENT S'},[-min(short_patch_durations)+0.5 0]);
-        [pre_short_times,pre_short_freqs,pre_short_ersp,pre_short_exponents,pre_short_offsets,...
-         pre_short_bp,pre_short_ap_bp] = ap_exp_ts(pre_short_epoch,chan_idx,band);
-        
-        fprintf('Processing pre stress long TT resting state...\n')
-        pre_long_EEG = pop_select(EEG,'time',pre_long_timestamp);
-        s_idx = find(ismember({pre_long_EEG.event.type},{'TRIGGER EVENT S'}));
-        s_timestamp = [pre_long_EEG.event(s_idx).latency]/pre_long_EEG.srate;
-        long_patch_durations = [s_timestamp(1),diff(s_timestamp)];
-        pre_long_epoch = pop_epoch(pre_long_EEG,{'TRIGGER EVENT S'},[-min(long_patch_durations)+0.5 0]);
-        [pre_long_times,pre_long_freqs,pre_long_ersp,pre_long_exponents,pre_long_offsets,...
-         pre_long_bp,pre_long_ap_bp] = ap_exp_ts(pre_long_epoch,chan_idx,band);
-        
-        fprintf('Processing post stress short TT resting state...\n')
-        post_short_EEG = pop_select(EEG,'time',post_short_timestamp);
-        s_idx = find(ismember({post_short_EEG.event.type},{'TRIGGER EVENT S'}));
-        s_timestamp = [post_short_EEG.event(s_idx).latency]/post_short_EEG.srate;
-        post_short_patch_durations = [s_timestamp(1),diff(s_timestamp)];
-        post_short_epoch = pop_epoch(post_short_EEG,{'TRIGGER EVENT S'},[-min(post_short_patch_durations)+0.5 0]);
-        [post_short_times,post_short_freqs,post_short_ersp,post_short_exponents,post_short_offsets,...
-         post_short_bp,post_short_ap_bp] = ap_exp_ts(post_short_epoch,chan_idx,band);
-        
-        fprintf('Processing post stress long TT resting state...\n')
-        post_long_EEG = pop_select(EEG,'time',post_long_timestamp);
-        s_idx = find(ismember({post_long_EEG.event.type},{'TRIGGER EVENT S'}));
-        s_timestamp = [post_long_EEG.event(s_idx).latency]/post_long_EEG.srate;
-        post_long_patch_durations = [s_timestamp(1),diff(s_timestamp)];
-        post_long_epoch = pop_epoch(post_long_EEG,{'TRIGGER EVENT S'},[-min(post_long_patch_durations)+0.5 0]);
-        [post_long_times,post_long_freqs,post_long_ersp,post_long_exponents,post_long_offsets,...
-         post_long_bp,post_long_ap_bp] = ap_exp_ts(post_long_epoch,chan_idx,band);
-toc;
+band = bands(1,:);
+fprintf('Processing pre task resting state...\n')
+pre_EEG = pop_select(EEG,'time',pre_timestamp);t_epoch=60;
+pre_EEG = eeg_regepochs(pre_EEG,'recurrence',t_epoch,'limits',[0 t_epoch],'rmbase',NaN);
+% pre_EEG = pop_rejepoch(pre_EEG,[1 0 0 0],0);
+[pre_times,pre_freqs,pre_ersp,pre_exponents,pre_offsets,...
+ pre_bp,pre_ap_bp] = ap_exp_ts(pre_EEG,chan_idx,band);
+
+fprintf('Processing pre stress short TT resting state...\n')
+pre_short_EEG = pop_select(EEG,'time',pre_short_timestamp);
+s_idx = find(ismember({pre_short_EEG.event.type},{'TRIGGER EVENT S'}));
+s_timestamp = [pre_short_EEG.event(s_idx).latency]/pre_short_EEG.srate;
+short_patch_durations = [s_timestamp(1),diff(s_timestamp)];
+pre_short_epoch = pop_epoch(pre_short_EEG,{'TRIGGER EVENT S'},[-min(short_patch_durations)+0.5 0]);
+[pre_short_times,pre_short_freqs,pre_short_ersp,pre_short_exponents,pre_short_offsets,...
+ pre_short_bp,pre_short_ap_bp] = ap_exp_ts(pre_short_epoch,chan_idx,band);
+
+fprintf('Processing pre stress long TT resting state...\n')
+pre_long_EEG = pop_select(EEG,'time',pre_long_timestamp);
+s_idx = find(ismember({pre_long_EEG.event.type},{'TRIGGER EVENT S'}));
+s_timestamp = [pre_long_EEG.event(s_idx).latency]/pre_long_EEG.srate;
+long_patch_durations = [s_timestamp(1),diff(s_timestamp)];
+pre_long_epoch = pop_epoch(pre_long_EEG,{'TRIGGER EVENT S'},[-min(long_patch_durations)+0.5 0]);
+[pre_long_times,pre_long_freqs,pre_long_ersp,pre_long_exponents,pre_long_offsets,...
+ pre_long_bp,pre_long_ap_bp] = ap_exp_ts(pre_long_epoch,chan_idx,band);
+
+fprintf('Processing post stress short TT resting state...\n')
+post_short_EEG = pop_select(EEG,'time',post_short_timestamp);
+s_idx = find(ismember({post_short_EEG.event.type},{'TRIGGER EVENT S'}));
+s_timestamp = [post_short_EEG.event(s_idx).latency]/post_short_EEG.srate;
+post_short_patch_durations = [s_timestamp(1),diff(s_timestamp)];
+post_short_epoch = pop_epoch(post_short_EEG,{'TRIGGER EVENT S'},[-min(post_short_patch_durations)+0.5 0]);
+[post_short_times,post_short_freqs,post_short_ersp,post_short_exponents,post_short_offsets,...
+ post_short_bp,post_short_ap_bp] = ap_exp_ts(post_short_epoch,chan_idx,band);
+
+fprintf('Processing post stress long TT resting state...\n')
+post_long_EEG = pop_select(EEG,'time',post_long_timestamp);
+s_idx = find(ismember({post_long_EEG.event.type},{'TRIGGER EVENT S'}));
+s_timestamp = [post_long_EEG.event(s_idx).latency]/post_long_EEG.srate;
+post_long_patch_durations = [s_timestamp(1),diff(s_timestamp)];
+post_long_epoch = pop_epoch(post_long_EEG,{'TRIGGER EVENT S'},[-min(post_long_patch_durations)+0.5 0]);
+[post_long_times,post_long_freqs,post_long_ersp,post_long_exponents,post_long_offsets,...
+ post_long_bp,post_long_ap_bp] = ap_exp_ts(post_long_epoch,chan_idx,band);
+
 %%
 state_conditions = {'pre','pre_short','pre_long','post_short','post_long'};
 spec_vars = {'times','freqs','ersp','exponents','offsets'};
