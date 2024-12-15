@@ -5,38 +5,50 @@
 %%% Load EEGLAB: DO NOT add to MATLAB path - causes problems with BioSig
 %%% and add data path
 clear;clc;
-current_dir = pwd;
-% cd "C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1";
-cd '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
-eeglab;close;
-cd(current_dir)
-data_path = strcat(current_dir,'/data/');
+rmpath_pat('NBTpublic')
+eeglab_dir = '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
+% eeglab_dir = "C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1";
+wrk_dir = '/home/decision_lab/work/github/frg';
+
+cd(eeglab_dir)
+eeglab nogui;
+cd(wrk_dir)
+
+data_path = [wrk_dir,'/data/'];
+%% Exclude bad (and processed) ids:
 badids = [37532 38058 39862 43543 45528 47801 48278];
-processed_ids = dir([data_path,'spec_data/*.mat']);
-proc_fnames = char({processed_ids(:).name});
-for idx = 1:size(proc_fnames,1)
-    proc_id = char(regexp(proc_fnames(idx,:),'[0-9]','match'))';
-    badids(end+1) = str2num(proc_id);
-end    
-subids = readmatrix(fullfile(data_path,'subids.txt')); subids = setdiff(subids,badids);
+% processed_ids = dir([data_path,'spec_data/*.mat']);
+% proc_fnames = char({processed_ids(:).name});
+% for idx = 1:size(proc_fnames,1)
+%     proc_id = char(regexp(proc_fnames(idx,:),'[0-9]','match'))';
+%     badids(end+1) = str2num(proc_id);
+% end
+all_subids = readmatrix(fullfile(data_path,'subids.txt')); all_subids = setdiff(all_subids,badids);
 
 %%%%%-New code, no need to read in subids.txt-%%%%%
 % edf_fnames = dir('**/*.edf');
 % data_path_dirs = split({edf_fnames(:).folder},'/');
 % subids = str2num(char(data_path_dirs(:,:,end))); subids = setdiff(subids,badids);
 %%%%%%%%%%%%%%%%%%%%
+
 % bp_table = table();
+% tstamps = table();
 
 % subids = [7873];
 % subid = 31730;
 %% Main loop begins:
+%%%%%-Test code for batchwise processing-%%%%%
+% batches = 1:4:length(all_subids)+1;
+% for idx =1:length(batches)-1
+% subids = all_subids(batches(idx):batches(idx+1)-1)
+% end
 
 %%%Comment out for single sub: Set up loop vars
-for idx = 1:length(subids)
-clearvars -global -except idx subids data_path %data_path_dirs %bp_table
-global subid; subid = subids(idx);
+for idx = 1:length(all_subids)
+clearvars -except idx all_subids data_path tstamps %data_path_dirs %bp_table
+global subid; subid = all_subids(idx);
 
-fprintf([repmat('=',1,80),'\n',char(string(subid)),'\n',repmat('=',1,80)])
+fprintf([repmat('=',1,80),'\n',char(string(subid)),'\n',repmat('=',1,80),'\n'])
 
 %%% Load data and channel locations:
 data_file = dir(fullfile(data_path,string(subid),'*.edf'));
@@ -44,7 +56,7 @@ data_file_path = fullfile(data_file(end).folder,data_file(end).name);
 % f_idx = find(ismember(data_path_dirs(:,:,end),num2str(subid)));
 % data_file_path = fullfile(edf_fnames(f_idx).folder,edf_fnames(f_idx).name)
 
-origchanlocs = readlocs('./data/Statnet_F3F4FCz.ced');
+origchanlocs = readlocs([data_path,'/Statnet_F3F4FCz.ced']);
 
 %%Comment out for single sub: Check existing set file
 % if isfile([pwd '/data/clean_set/' num2str(subid) '_preproc.set'])
@@ -55,18 +67,19 @@ origchanlocs = readlocs('./data/Statnet_F3F4FCz.ced');
 % end    
 
 EEG = pop_biosig(data_file_path,'channels',1:19);
+% EEG = pop_select(EEG,'channel',1:19);
 EEG = pop_select(EEG,'rmchannel',{'EKG2'});
 
 %Online reference was FCz, which is not there in the data. Adding an
 %empty channel at index 19 (same as chanloc file) before loading the channel locations.
 EEG.data(end+1,:) = 0;EEG.nbchan = size(EEG.data,1);
-EEG = pop_chanedit(EEG,'load','./data/Statnet_F3F4FCz.ced');
+EEG = pop_chanedit(EEG,'load',[data_path,'/Statnet_F3F4FCz.ced']);
 
-% fcz_idx = find(ismember({origchanlocs(:).labels},'FCz'));
-% fcz = origchanlocs(fcz_idx); fcz.idx = fcz_idx;
-% fcz = orderfields(fcz,[find(ismember(fieldnames(fcz),{'idx'})),1:size(fieldnames(fcz),1)-1]);
-% fcz.a=0;fcz.b=0;
-% EEG = pop_chanedit(EEG,'add',struct2cell(fcz));%,'load','./data/Statnet_F3F4FCz.ced','setref',{1:EEG.nbchan,fcz.labels});
+% fcz_idx = find(ismember({origchanlocs(:).labels},'FCz')); fcz =
+% origchanlocs(fcz_idx); fcz.idx = fcz_idx; fcz =
+% orderfields(fcz,[find(ismember(fieldnames(fcz),{'idx'})),1:size(fieldnames(fcz),1)-1]);
+% fcz.a=0;fcz.b=0; EEG =
+% pop_chanedit(EEG,'add',struct2cell(fcz));%,'load','./data/Statnet_F3F4FCz.ced','setref',{1:EEG.nbchan,fcz.labels});
 
 %Re-referencing to mastoids A1 A2, interpolating FCz (17 in data, 19 in chanloc), and
 %re-referencing to averef
@@ -223,7 +236,6 @@ EEG = pop_reref(EEG,[]);
 % T=table(subid,pre_delta_power,pre_theta_power,pre_alpha_power,pre_lbeta_power,pre_hbeta_power,pre_lgamma_power)
 
 %% Find pre and post stress, short and long timestamps:
-
 all_events = {EEG.event.type};
 if size(find(ismember(all_events,'TRIGGER EVENT A')),2)>0
     pre_start = find(ismember(all_events,'TRIGGER EVENT A')); pre_start = pre_start(1);
@@ -245,7 +257,7 @@ if subid==7873
     pre_end = find(strcmp(all_events,'TRIGGER EVENT B'));
 else    
     pre_end = find(strcmp(all_events(pre_start:end),block_end_marker));
-end    
+end
 pre_end = pre_end(1)+pre_start;
 pre_end_time = EEG.event(pre_end).latency/EEG.srate;
 pre_timestamp = [pre_start_time,pre_end_time];
@@ -309,80 +321,82 @@ else
     post_short_timestamp = [post_game_start_time+post_game_long_end_time...
                             post_game_start_time+post_game_short_end_time];
 end
-
+% sub_tstamp = table(subid,pre_timestamp,pre_short_timestamp,pre_long_timestamp,post_short_timestamp,post_long_timestamp);
+% tstamps = [tstamps;sub_tstamp];
+% end
 %% Test E/I Variability plots:
-% band = [1 100];chan_idx=13;
+band = [1 100];chan_idx=13;
+
+pre_EEG = pop_select(EEG,'time',[0 300]);t_epoch=60;
+pre_EEG = eeg_regepochs(pre_EEG,'recurrence',t_epoch,'limits',[0 t_epoch],'rmbase',NaN);
+% pre_EEG = pop_rejepoch(pre_EEG,[1 0 0 0],0);
+[pre_ersp,pre_exponents,pre_offsets,pre_times] = ap_exp_ts(pre_EEG,chan_idx,band);
+figure;hold on;
+hist(pre_exponents)
+% plot(pre_timepoints,pre_exponents);
+% plot(timepoints,offsets);
+% hold off;
+
+pre_short_EEG = pop_select(EEG,'time',pre_short_timestamp);
+% sprintf('Trials: %d',sum(ismember({pre_short_EEG.event.type},{'TRIGGER EVENT N'})))
+s_idx = find(ismember({pre_short_EEG.event.type},{'TRIGGER EVENT S'}));
+% sprintf('Num patches: %d',size(s_idx,2))
+% n_patch_idx = [1,s_idx];
+% for idx=2:size(n_patch_idx,2)
+%     sprintf('Trials in patch %d: %d',idx-1,sum(ismember({pre_short_EEG.event(n_patch_idx(idx-1):n_patch_idx(idx)).type},{'TRIGGER EVENT N'})))
+% end
+s_timestamp = [pre_short_EEG.event(s_idx).latency]/pre_short_EEG.srate;
+short_patch_durations = [s_timestamp(1),diff(s_timestamp)];
+pre_short_epoch = pop_epoch(pre_short_EEG,{'TRIGGER EVENT S'},[-min(short_patch_durations)+0.5 0]);
+sprintf('Num patches (after epoching): %d',pre_short_epoch.trials)
+[pre_short_ersp,pre_short_exponents,pre_short_offsets,pre_short_timepoints] = ap_exp_ts(pre_short_epoch,chan_idx,band);
+% short_trial_times = nan(pre_short_epoch.trials,12);
+% for idx = 1:pre_short_epoch.trials
+%     T_idx = find(ismember(pre_short_epoch.epoch(idx).eventtype,{'TRIGGER EVENT T'}));
+%     short_trial_times(idx,1:size(T_idx,2)) = cell2mat(pre_short_epoch.epoch(idx).eventlatency(T_idx))/1000;
+% end
+% mean_short_trial_times = mean(short_trial_times,1,'omitnan');
 % 
-% pre_EEG = pop_select(EEG,'time',[0 300]);t_epoch=60;
-% pre_EEG = eeg_regepochs(pre_EEG,'recurrence',t_epoch,'limits',[0 t_epoch],'rmbase',NaN);
-% % pre_EEG = pop_rejepoch(pre_EEG,[1 0 0 0],0);
-% [pre_ersp,pre_exponents,pre_offsets,pre_times] = ap_exp_ts(pre_EEG,chan_idx,band);
 % figure;hold on;
-% hist(pre_exponents)
-% % plot(pre_timepoints,pre_exponents);
+% hist(short_exponents,10)
+% plot(short_exponents);
+% xline(short_trial_times(:,3),'--');
+% xline(mean_short_trial_times(3));
 % % plot(timepoints,offsets);
-% % hold off;
+% hold off;
+
+pre_long_EEG = pop_select(EEG,'time',pre_long_timestamp);
+% sprintf('Trials: %d',sum(ismember({pre_long_EEG.event.type},{'TRIGGER EVENT N'})))
+s_idx = find(ismember({pre_long_EEG.event.type},{'TRIGGER EVENT S'}));
+% sprintf('Num patches: %d',size(s_idx,2))
+% n_patch_idx = [1,s_idx];
+% for idx=2:size(n_patch_idx,2)
+%     sprintf('Trials in patch %d: %d',idx-1,sum(ismember({pre_long_EEG.event(n_patch_idx(idx-1):n_patch_idx(idx)).type},{'TRIGGER EVENT N'})))
+% end
+s_timestamp = [pre_long_EEG.event(s_idx).latency]/pre_long_EEG.srate;
+long_patch_durations = [s_timestamp(1),diff(s_timestamp)];
+pre_long_epoch = pop_epoch(pre_long_EEG,{'TRIGGER EVENT S'},[-min(long_patch_durations)+0.5 0]);
+% sprintf('Num patches (after epoching): %d',pre_long_epoch.trials)
+[pre_long_ersp,pre_long_exponents,pre_long_offsets,pre_long_timepoints] = ap_exp_ts(pre_long_epoch,chan_idx,band);
+% long_trial_times = nan(pre_long_epoch.trials,12);
+% for idx = 1:pre_long_epoch.trials
+%     U_idx = find(ismember(pre_long_epoch.epoch(idx).eventtype,{'TRIGGER EVENT U'}));
+%     long_trial_times(idx,1:size(U_idx,2)) = cell2mat(pre_long_epoch.epoch(idx).eventlatency(U_idx))/1000;
+% end
+% mean_long_trial_times = mean(long_trial_times,1,'omitnan');
 % 
-% pre_short_EEG = pop_select(EEG,'time',pre_short_timestamp);
-% % sprintf('Trials: %d',sum(ismember({pre_short_EEG.event.type},{'TRIGGER EVENT N'})))
-% s_idx = find(ismember({pre_short_EEG.event.type},{'TRIGGER EVENT S'}));
-% % sprintf('Num patches: %d',size(s_idx,2))
-% % n_patch_idx = [1,s_idx];
-% % for idx=2:size(n_patch_idx,2)
-% %     sprintf('Trials in patch %d: %d',idx-1,sum(ismember({pre_short_EEG.event(n_patch_idx(idx-1):n_patch_idx(idx)).type},{'TRIGGER EVENT N'})))
-% % end
-% s_timestamp = [pre_short_EEG.event(s_idx).latency]/pre_short_EEG.srate;
-% short_patch_durations = [s_timestamp(1),diff(s_timestamp)];
-% pre_short_epoch = pop_epoch(pre_short_EEG,{'TRIGGER EVENT S'},[-min(short_patch_durations)+0.5 0]);
-% sprintf('Num patches (after epoching): %d',pre_short_epoch.trials)
-% [pre_short_ersp,pre_short_exponents,pre_short_offsets,pre_short_timepoints] = ap_exp_ts(pre_short_epoch,chan_idx,band);
-% % short_trial_times = nan(pre_short_epoch.trials,12);
-% % for idx = 1:pre_short_epoch.trials
-% %     T_idx = find(ismember(pre_short_epoch.epoch(idx).eventtype,{'TRIGGER EVENT T'}));
-% %     short_trial_times(idx,1:size(T_idx,2)) = cell2mat(pre_short_epoch.epoch(idx).eventlatency(T_idx))/1000;
-% % end
-% % mean_short_trial_times = mean(short_trial_times,1,'omitnan');
-% % 
-% % figure;hold on;
-% % hist(short_exponents,10)
-% % plot(short_exponents);
-% % xline(short_trial_times(:,3),'--');
-% % xline(mean_short_trial_times(3));
-% % % plot(timepoints,offsets);
-% % hold off;
-% 
-% pre_long_EEG = pop_select(EEG,'time',pre_long_timestamp);
-% % sprintf('Trials: %d',sum(ismember({pre_long_EEG.event.type},{'TRIGGER EVENT N'})))
-% s_idx = find(ismember({pre_long_EEG.event.type},{'TRIGGER EVENT S'}));
-% % sprintf('Num patches: %d',size(s_idx,2))
-% % n_patch_idx = [1,s_idx];
-% % for idx=2:size(n_patch_idx,2)
-% %     sprintf('Trials in patch %d: %d',idx-1,sum(ismember({pre_long_EEG.event(n_patch_idx(idx-1):n_patch_idx(idx)).type},{'TRIGGER EVENT N'})))
-% % end
-% s_timestamp = [pre_long_EEG.event(s_idx).latency]/pre_long_EEG.srate;
-% long_patch_durations = [s_timestamp(1),diff(s_timestamp)];
-% pre_long_epoch = pop_epoch(pre_long_EEG,{'TRIGGER EVENT S'},[-min(long_patch_durations)+0.5 0]);
-% % sprintf('Num patches (after epoching): %d',pre_long_epoch.trials)
-% [pre_long_ersp,pre_long_exponents,pre_long_offsets,pre_long_timepoints] = ap_exp_ts(pre_long_epoch,chan_idx,band);
-% % long_trial_times = nan(pre_long_epoch.trials,12);
-% % for idx = 1:pre_long_epoch.trials
-% %     U_idx = find(ismember(pre_long_epoch.epoch(idx).eventtype,{'TRIGGER EVENT U'}));
-% %     long_trial_times(idx,1:size(U_idx,2)) = cell2mat(pre_long_epoch.epoch(idx).eventlatency(U_idx))/1000;
-% % end
-% % mean_long_trial_times = mean(long_trial_times,1,'omitnan');
-% % 
-% % figure;hold on;
-% % hist(long_exponents,10)
-% % plot(long_exponents);
-% % xline(long_trial_times(:,3),'--');
-% % xline(mean_long_trial_times(3));
-% % % plot(timepoints,offsets);
+% figure;hold on;
+% hist(long_exponents,10)
+% plot(long_exponents);
+% xline(long_trial_times(:,3),'--');
+% xline(mean_long_trial_times(3));
+% % plot(timepoints,offsets);
 %%
 bands = [[1 100];[1 10];[10 100]];
-sel_chans = {'FCz','FZ','CZ'};
-chan_id_fn = cellfun(@(x) ismember(x,sel_chans),{EEG.chanlocs.labels},'UniformOutput',0); %%Completely unnecessary
-chan_idxs = find(cell2mat(chan_id_fn)); chan_idx = chan_idxs(2);
-fprintf([repmat('=',1,80),'\n',sel_chans(chan_idx),'\n',repmat('=',1,80),'\n'])
+sel_chans = {'F8'};
+% chan_id_fn = cellfun(@(x) ismember(x,sel_chans),{EEG.chanlocs.labels},'UniformOutput',0); %%Completely unnecessary
+chan_idxs = find(ismember({EEG.chanlocs.labels},sel_chans)); chan_idx = chan_idxs(1);
+fprintf([repmat('=',1,80),'\n',EEG.chanlocs(chan_idx).labels,'\n',repmat('=',1,80),'\n'])
 
 %%
 % for chan_idx = chan_idxs
@@ -458,7 +472,7 @@ for sc_idx = 1:size(state_conditions,2)
 %         [pre_long_exp_pdf,pre_long_exp] = ksdensity(pre_long_exponents);
 %         [post_short_exp_pdf,post_short_exp] = ksdensity(post_short_exponents);
 %         [post_long_exp_pdf,post_long_exp] = ksdensity(post_long_exponents);
-%
+
 %         pre_stat = sprintf('mean: %1.2f\nstd: %1.2f',mean(pre_exponents,'omitnan'),std(pre_exponents,'omitnan'));
 %         pre_short_stat = sprintf('mean: %1.2f\nstd: %1.2f',mean(pre_short_exponents,'omitnan'),std(pre_short_exponents,'omitnan'));
 %         pre_long_stat = sprintf('mean: %1.2f\nstd: %1.2f',mean(pre_long_exponents,'omitnan'),std(pre_long_exponents,'omitnan'));
@@ -545,14 +559,17 @@ end
 % end
 % % end
 %% Save processed data:
-%%Comment out for single sub
 % % pop_saveset(EEG,'filename',[num2str(subid) '_preproc'],'filepath',[pwd '/data/clean_set/'],'savemode','onefile');
 % global delta_hz; global theta_hz; global alpha_hz; global lbeta_hz; global hbeta_hz; global lgamma_hz
 % delta_hz = find(f_hz>1 & f_hz<4); theta_hz = find(f_hz>4 & f_hz<7); alpha_hz = find(f_hz>8 & f_hz<13);
 % lbeta_hz = find(f_hz>13 & f_hz<20); hbeta_hz = find(f_hz>20 & f_hz<30); lgamma_hz = find(f_hz>30 & f_hz<45);
 % subT=frg_extract_bp(subid,EEG,pre_start_time,short_timestamp,long_timestamp);
 % bp_table = [bp_table;subT];
-save(sprintf('./data/spec_data/spec_%d_%s',subid,EEG.chanlocs(chan_idx).labels),'spec_data')
+spec_chan_dir = [data_path,'spec_data/',EEG.chanlocs(chan_idx).labels];
+if ~exist(spec_chan_dir)
+    mkdir(spec_chan_dir)
+end
+% save(sprintf('./data/spec_data/%s/spec_%d_%s',EEG.chanlocs(chan_idx).labels,subid,EEG.chanlocs(chan_idx).labels),'spec_data')
 end
 % writetable(bp_table,'bandpowers.csv')
 %%
