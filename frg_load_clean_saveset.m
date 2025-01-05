@@ -1,6 +1,7 @@
 %% Preamble:
 %%% Load EEGLAB: DO NOT add to MATLAB path - causes problems with BioSig
 %%% and add data path
+%%% NOTE: eeglab2024.2.1 unable to load chanlocs from
 clear;clc;
 % rmpath_pat('NBTpublic')
 % eeglab_dir = '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
@@ -156,24 +157,23 @@ for idx = 1:length(subids)
 % epoch_durations = diff(event_timestamps);
 % epoch_data = pop_epoch(pre_short_EEG,{'TRIGGER EVENT N'},[-1 2]);
 % sprintf('Num epochs: %d',epoch_data.trials)
-[pre_short,early,mid,late,leave] = frg_epoch(pre_long_EEG,'TRIGGER EVENT N',[-1 2]);
+[epoch_data,early,mid,late,leave] = frg_epoch(post_short_EEG,'TRIGGER EVENT N',[-1 2]);
+% epoch_data = pop_pac(epoch_data,'Channels',[4 8],[30 90],[12 16],[12 16],'method','ermipac','nboot',200,'alpha',[],'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
 end
 
 function [ep_dat,early,mid,late,leave] = frg_epoch(raw_eeg,event_str,epoch_lims)
     ep_dat = pop_epoch(raw_eeg,{event_str},epoch_lims);
-    leave_idxs = [];
-    trigger_events = {'TRIGGER EVENT R'};
-    for idx = 1:ep_dat.trials
-        trial_events = ep_dat.epoch(idx).eventtype;
-        [~,event_idx] = ismember(trial_events,trigger_events);
-        if ismember(1,event_idx)
-            leave_idxs(end+1) = idx;
-        end
-    end
+    trigger_event = {'TRIGGER EVENT R'};
 
+    %Explain how these lines find leave indexes
+    trial_events = cellfun(@cell2mat,{ep_dat.epoch(:).eventtype},'UniformOutput',false);
+    leave_idxs = find(contains(trial_events,trigger_event));
+    
     entry_idxs = [1 leave_idxs(1:end-1)+1];
     patch_trials = arrayfun(@(f,g) (f:g),entry_idxs,leave_idxs,'UniformOutput',false);
     patch_len = cell2mat(cellfun(@length,patch_trials,'UniformOutput',false));
+
+    %Explain how these lines categorize patch trials as early, mid, late and leave
     patch_trial_cat = arrayfun(@(f) discretize((1:f)/f,[0 0.34 0.67 0.99 1]),patch_len,'UniformOutput',false);
     flat_cat = cell2mat(patch_trial_cat);
     flat_cat = [flat_cat zeros(1,ep_dat.trials-size(flat_cat,2))];
