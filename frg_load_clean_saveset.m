@@ -25,7 +25,7 @@ cd(wrk_dir)
 % subids = str2num(char(data_path_dirs(:,:,end)));
 % subids = setdiff(subids,badids);
 
-subids = [31730,47204,47131,48238,47324,43000];
+subids = [31730]%,47204,47131,48238,47324,43000];
 %%
 for idx = 1:length(subids)
 %%    
@@ -149,23 +149,33 @@ for idx = 1:length(subids)
 %     post_long_EEG = frg_bandpass_clean(post_long_EEG);
 %%
     [epoch_data,early,mid,late,leave] = frg_epoch(pre_short_EEG,'TRIGGER EVENT N',[-1 2]);
-    
+    phase_chan_idx = find(ismember({epoch_data.chanlocs.labels},{'FZ'}));
+    amp_chan_idx = find(ismember({epoch_data.chanlocs.labels},{'CZ'}));
+    out_dir = [data_path '/pac_data/'];
     tic
-    early = pop_pac(early,'Channels',[4 8],[30 90],[12 16],[12 16],'method','ermipac','nboot',200,'alpha',[],'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
+    early = pop_pac(early,'Channels',[4 8],[30 90],[phase_chan_idx],[amp_chan_idx],...
+                    'method','ermipac','nboot',200,'alpha',[],...
+                    'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
     early = pop_saveset(early,'filename',[num2str(subid) '_preshort_early_FZ-CZ_theta-gamma.set'],...
-                        'filepath',[data_path '/' num2str(subid) '/'],'savemode','onefile');
+                        'filepath',out_dir,'savemode','onefile');
     
-    mid = pop_pac(mid,'Channels',[4 8],[30 90],[12 16],[12 16],'method','ermipac','nboot',200,'alpha',[],'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
+    mid = pop_pac(mid,'Channels',[4 8],[30 90],[phase_chan_idx],[amp_chan_idx],...
+                    'method','ermipac','nboot',200,'alpha',[],...
+                    'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
     mid = pop_saveset(mid,'filename',[num2str(subid) '_preshort_mid_FZ-CZ_theta-gamma.set'],...
-                        'filepath',[data_path '/' num2str(subid) '/'],'savemode','onefile');
+                        'filepath',out_dir,'savemode','onefile');
     
-    late = pop_pac(late,'Channels',[4 8],[30 90],[12 16],[12 16],'method','ermipac','nboot',200,'alpha',[],'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
+    late = pop_pac(late,'Channels',[4 8],[30 90],[phase_chan_idx],[amp_chan_idx],...
+                    'method','ermipac','nboot',200,'alpha',[],...
+                    'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
     late = pop_saveset(late,'filename',[num2str(subid) '_preshort_late_FZ-CZ_theta-gamma.set'],...
-                        'filepath',[data_path '/' num2str(subid) '/'],'savemode','onefile');
+                        'filepath',out_dir,'savemode','onefile');
     
-    leave = pop_pac(leave,'Channels',[4 8],[30 90],[12 16],[12 16],'method','ermipac','nboot',200,'alpha',[],'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
+    leave = pop_pac(leave,'Channels',[4 8],[30 90],[phase_chan_idx],[amp_chan_idx],...
+                    'method','ermipac','nboot',200,'alpha',[],...
+                    'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
     leave = pop_saveset(leave,'filename',[num2str(subid) '_preshort_leave_FZ-CZ_theta-gamma.set'],...
-                        'filepath',[data_path '/' num2str(subid) '/'],'savemode','onefile');
+                        'filepath',out_dir,'savemode','onefile');
     toc
     
 end
