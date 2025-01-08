@@ -4,30 +4,32 @@
 %%% NOTE: eeglab2024.2.1 unable to load chanlocs from
 clear;clc;
 % rmpath_pat('NBTpublic')
-% eeglab_dir = '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
-% wrk_dir = '/home/decision_lab/work/github/frg/';
-% dir_sep = '/';
+eeglab_dir = '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
+wrk_dir = '/home/decision_lab/work/github/frg/';
+dir_sep = '/';
 
-eeglab_dir = "C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1\";
-wrk_dir = "C:\Users\promitmoitra\Documents\GitHub\frg\";
-dir_sep = '\';
-
-cd(eeglab_dir)
-eeglab nogui;
-cd(wrk_dir)
+% eeglab_dir = "C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1\";
+% wrk_dir = "C:\Users\promitmoitra\Documents\GitHub\frg\";
+% dir_sep = '\';
 
 data_path = [char(wrk_dir),'data'];
 %%
-badids = [37532 38058 39862 43543 45528 47801 48278];
-%Assuming each file is in a folder named <subid>
-edf_fnames = dir('**/*.edf');
-data_path_dirs = split({edf_fnames(:).folder},dir_sep);
-subids = str2num(char(data_path_dirs(end))); 
-subids = setdiff(subids,badids);
+cd(eeglab_dir)
+eeglab nogui;
+cd(wrk_dir)
+%%
+% badids = [37532 38058 39862 43543 45528 47801 48278];
+% %%%Assuming each file is in a folder named <subid>
+% edf_fnames = dir('**/*.edf');
+% data_path_dirs = split({edf_fnames(:).folder},dir_sep);
+% subids = str2num(char(data_path_dirs(:,:,end)));
+% subids = setdiff(subids,badids);
+
+subids = [31730,47204,47131,48238,47324,43000];
 %%
 for idx = 1:length(subids)
 %%    
-    clearvars -except idx subids data_path
+    clearvars -except idx subids data_path %data_path_dirs
     subid = subids(idx);
     fprintf([repmat('=',1,80),'\n',char(string(subid)),'\n',repmat('=',1,80),'\n'])
     
@@ -44,14 +46,7 @@ for idx = 1:length(subids)
     EEG = pop_reref(EEG,{'A1','A2'});
     EEG = pop_interp(EEG,origchanlocs);
     EEG = pop_reref(EEG,[]);
-%%
-    freqs = [0.5 120];
-    wtype = 'hamming'; df = 1; m = pop_firwsord(wtype,EEG.srate,df);
-    EEG = pop_firws(EEG,'wtype',wtype,'ftype','bandpass','fcutoff',freqs,'forder',m);
-    
-    EEG = clean_data_with_zapline_plus_eeglab_wrapper(EEG,struct('noisefreqs',60, ...
-                                       'chunkLength',0,'adaptiveNremove',true, ...
-                                       'fixedNremove',1,'plotResults',0));
+
 %%
     all_events = {EEG.event.type};
     if size(find(ismember(all_events,'TRIGGER EVENT A')),2)>0
@@ -142,30 +137,54 @@ for idx = 1:length(subids)
     end
 
     pre_short_EEG = pop_select(EEG,'time',pre_short_timestamp);
-    pre_long_EEG = pop_select(EEG,'time',pre_long_timestamp);
-    post_short_EEG = pop_select(EEG,'time',post_short_timestamp);
-    post_long_EEG = pop_select(EEG,'time',post_long_timestamp);
+    pre_short_EEG = frg_bandpass_clean(pre_short_EEG);
+    
+%     pre_long_EEG = pop_select(EEG,'time',pre_long_timestamp);
+%     pre_long_EEG = frg_bandpass_clean(pre_long_EEG);
+%     
+%     post_short_EEG = pop_select(EEG,'time',post_short_timestamp);
+%     post_short_EEG = frg_bandpass_clean(post_short_EEG);
+%     
+%     post_long_EEG = pop_select(EEG,'time',post_long_timestamp);
+%     post_long_EEG = frg_bandpass_clean(post_long_EEG);
 %%
-% s_idx = find(ismember({pre_short_EEG.event.type},{'TRIGGER EVENT S'}));
-% s_timestamp = [pre_short_EEG.event(s_idx).latency]/pre_short_EEG.srate;
-% short_patch_durations = [s_timestamp(1),diff(s_timestamp)];
-% pre_short_patch_epoch = pop_epoch(pre_short_EEG,{'TRIGGER EVENT S'},[-min(short_patch_durations)+0.5 0]);
-% sprintf('Num patches (after epoching): %d',pre_short_patch_epoch.trials)
+    [epoch_data,early,mid,late,leave] = frg_epoch(pre_short_EEG,'TRIGGER EVENT N',[-1 2]);
+    
+    tic
+    early = pop_pac(early,'Channels',[4 8],[30 90],[12 16],[12 16],'method','ermipac','nboot',200,'alpha',[],'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
+    early = pop_saveset(early,'filename',[num2str(subid) '_preshort_early_FZ-CZ_theta-gamma.set'],...
+                        'filepath',[data_path '/' num2str(subid) '/'],'savemode','onefile');
+    
+    mid = pop_pac(mid,'Channels',[4 8],[30 90],[12 16],[12 16],'method','ermipac','nboot',200,'alpha',[],'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
+    mid = pop_saveset(mid,'filename',[num2str(subid) '_preshort_mid_FZ-CZ_theta-gamma.set'],...
+                        'filepath',[data_path '/' num2str(subid) '/'],'savemode','onefile');
+    
+    late = pop_pac(late,'Channels',[4 8],[30 90],[12 16],[12 16],'method','ermipac','nboot',200,'alpha',[],'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
+    late = pop_saveset(late,'filename',[num2str(subid) '_preshort_late_FZ-CZ_theta-gamma.set'],...
+                        'filepath',[data_path '/' num2str(subid) '/'],'savemode','onefile');
+    
+    leave = pop_pac(leave,'Channels',[4 8],[30 90],[12 16],[12 16],'method','ermipac','nboot',200,'alpha',[],'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
+    leave = pop_saveset(leave,'filename',[num2str(subid) '_preshort_leave_FZ-CZ_theta-gamma.set'],...
+                        'filepath',[data_path '/' num2str(subid) '/'],'savemode','onefile');
+    toc
+    
+end
 
-% event_idx = find(ismember({pre_short_EEG.event.type},{'TRIGGER EVENT N'}));
-% event_timestamps = [pre_short_EEG.event(event_idx).latency]/pre_short_EEG.srate;
-% epoch_durations = diff(event_timestamps);
-% epoch_data = pop_epoch(pre_short_EEG,{'TRIGGER EVENT N'},[-1 2]);
-% sprintf('Num epochs: %d',epoch_data.trials)
-[epoch_data,early,mid,late,leave] = frg_epoch(post_short_EEG,'TRIGGER EVENT N',[-1 2]);
-% epoch_data = pop_pac(epoch_data,'Channels',[4 8],[30 90],[12 16],[12 16],'method','ermipac','nboot',200,'alpha',[],'nfreqs1',10,'nfreqs2',20,'freqscale','log','bonfcorr',0);
+function eeg = frg_bandpass_clean(eeg)
+    freqs = [0.5 120];
+    wtype = 'hamming'; df = 1; m = pop_firwsord(wtype,eeg.srate,df);
+    eeg = pop_firws(eeg,'wtype',wtype,'ftype','bandpass','fcutoff',freqs,'forder',m);
+    
+    eeg = clean_data_with_zapline_plus_eeglab_wrapper(eeg,struct('noisefreqs',60, ...
+                                       'chunkLength',0,'adaptiveNremove',true, ...
+                                       'fixedNremove',1,'plotResults',0));
 end
 
 function [ep_dat,early,mid,late,leave] = frg_epoch(raw_eeg,event_str,epoch_lims)
     ep_dat = pop_epoch(raw_eeg,{event_str},epoch_lims);
     trigger_event = {'TRIGGER EVENT R'};
 
-    %Explain how these lines find leave indexes
+    %Explain how these two lines find leave indexes
     trial_events = cellfun(@cell2mat,{ep_dat.epoch(:).eventtype},'UniformOutput',false);
     leave_idxs = find(contains(trial_events,trigger_event));
     
