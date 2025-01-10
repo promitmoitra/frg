@@ -18,14 +18,14 @@ cd(eeglab_dir)
 eeglab nogui;
 cd(wrk_dir)
 %%
-% badids = [37532 38058 39862 43543 45528 47801 48278];
-% %%%Assuming each file is in a folder named <subid>
-% edf_fnames = dir('**/*.edf');
-% data_path_dirs = split({edf_fnames(:).folder},dir_sep);
-% subids = str2num(char(data_path_dirs(:,:,end)));
-% subids = setdiff(subids,badids);
+badids = [37532 38058 39862 43543 45528 47801 48278];
+%%%Assuming each file is in a folder named <subid>
+edf_fnames = dir('**/*.edf');
+data_path_dirs = split({edf_fnames(:).folder},dir_sep);
+subids = str2num(char(data_path_dirs(:,:,end)));
+subids = setdiff(subids,badids);
 
-subids = [31730];%,47204,47131,48238,47324,43000];
+% subids = [31730];%,47204,47131,48238,47324,43000];
 %%
 for idx = 1:length(subids)
 %%    
@@ -45,9 +45,13 @@ for idx = 1:length(subids)
     EEG = pop_chanedit(EEG,'load',[data_path,'/Statnet_F3F4FCz.ced']);
     EEG = pop_reref(EEG,{'A1','A2'});
     EEG = pop_interp(EEG,origchanlocs);
-    EEG = pop_reref(EEG,[]);
+    raw = EEG;
+    thresh = [0 0; 0.9 1; 0.9 1; 0.9 1; 0.9 1; 0.9 1; 0 0];
+    EEG = frg_filt_clean_ica(EEG,thresh);
 
-    EEG = frg_bandpass_clean(EEG);
+    raw = pop_reref(raw,[]);
+    EEG = pop_reref(EEG,[]);
+%     vis_artifacts(raw,EEG);
 %%
     all_events = {EEG.event.type};
     if size(find(ismember(all_events,'TRIGGER EVENT A')),2)>0
@@ -136,32 +140,41 @@ for idx = 1:length(subids)
         post_short_events = all_events(post_game_long_end:post_game_short_end);
         post_short_timestamp = [post_game_long_end_time post_game_short_end_time];
     end
-
-    preshort_EEG = pop_select(EEG,'time',pre_short_timestamp);
-    preshort_EEG = frg_bandpass_clean(preshort_EEG);
-    preshort_EEG = pop_saveset(preshort_EEG,'filename',[num2str(subid) '_preshort.set'],...
-                                'filepath',[data_path '/' num2str(subid)],'savemode','onefile');
-
-    prelong_EEG = pop_select(EEG,'time',pre_long_timestamp);
-    prelong_EEG = frg_bandpass_clean(prelong_EEG);
-    prelong_EEG = pop_saveset(prelong_EEG,'filename',[num2str(subid) '_prelong.set'],...
-                                'filepath',[data_path '/' num2str(subid)],'savemode','onefile');
-
-    postshort_EEG = pop_select(EEG,'time',post_short_timestamp);
-    postshort_EEG = frg_bandpass_clean(postshort_EEG);
-    postshort_EEG = pop_saveset(postshort_EEG,'filename',[num2str(subid) '_postshort.set'],...
-                                'filepath',[data_path '/' num2str(subid)],'savemode','onefile');
-
-    postlong_EEG = pop_select(EEG,'time',post_long_timestamp);
-    postlong_EEG = frg_bandpass_clean(postlong_EEG);
-    postlong_EEG = pop_saveset(postlong_EEG,'filename',[num2str(subid) '_postlong.set'],...
-                                'filepath',[data_path '/' num2str(subid)],'savemode','onefile');
-
 %%
-    [epoch_data,early,mid,late,leave] = frg_epoch(preshort_EEG,'TRIGGER EVENT N',[-1 2],1);
-    [epoch_data,early,mid,late,leave] = frg_epoch(prelong_EEG,'TRIGGER EVENT N',[-1 2],1);
-    [epoch_data,early,mid,late,leave] = frg_epoch(postshort_EEG,'TRIGGER EVENT N',[-1 2],1);
-    [epoch_data,early,mid,late,leave] = frg_epoch(postlong_EEG,'TRIGGER EVENT N',[-1 2],1);
+    preshort_EEG = pop_select(EEG,'time',pre_short_timestamp);
+    prelong_EEG = pop_select(EEG,'time',pre_long_timestamp);
+    postshort_EEG = pop_select(EEG,'time',post_short_timestamp);
+    postlong_EEG = pop_select(EEG,'time',post_long_timestamp);
+
+    preshort_EEG = pop_saveset(preshort_EEG,'filename',[num2str(subid) '_preshort.set'],...
+                                'filepath',[data_path '/ica_data/'],'savemode','onefile');
+    prelong_EEG = pop_saveset(prelong_EEG,'filename',[num2str(subid) '_prelong.set'],...
+                                'filepath',[data_path '/ica_data/'],'savemode','onefile');
+    postshort_EEG = pop_saveset(postshort_EEG,'filename',[num2str(subid) '_postshort.set'],...
+                                'filepath',[data_path '/ica_data/'],'savemode','onefile');
+    postlong_EEG = pop_saveset(postlong_EEG,'filename',[num2str(subid) '_postlong.set'],...
+                                'filepath',[data_path '/ica_data/'],'savemode','onefile');
+%%%%%%%%%%%%%%%
+    preshort_raw = pop_select(raw,'time',pre_short_timestamp);
+    prelong_raw = pop_select(raw,'time',pre_long_timestamp);
+    postshort_raw = pop_select(raw,'time',post_short_timestamp);
+    postlong_raw = pop_select(raw,'time',post_long_timestamp);
+
+    preshort_raw = pop_saveset(preshort_raw,'filename',[num2str(subid) '_preshort.set'],...
+                              'filepath',[data_path '/raw_seg_data/'],'savemode','onefile');
+    prelong_raw = pop_saveset(prelong_raw,'filename',[num2str(subid) '_prelong.set'],...
+                                'filepath',[data_path '/raw_seg_data/'],'savemode','onefile');
+    postshort_raw = pop_saveset(postshort_raw,'filename',[num2str(subid) '_postshort.set'],...
+                                'filepath',[data_path '/raw_seg_data/'],'savemode','onefile');
+    postlong_raw = pop_saveset(postlong_raw,'filename',[num2str(subid) '_postlong.set'],...
+                                'filepath',[data_path '/raw_seg_data/'],'savemode','onefile');
+
+%%  
+    save_mode=1;
+    [epoch_data,early,mid,late,leave] = frg_epoch(preshort_EEG,'TRIGGER EVENT N',[-1 2],save_mode);
+    [epoch_data,early,mid,late,leave] = frg_epoch(prelong_EEG,'TRIGGER EVENT N',[-1 2],save_mode);
+    [epoch_data,early,mid,late,leave] = frg_epoch(postshort_EEG,'TRIGGER EVENT N',[-1 2],save_mode);
+    [epoch_data,early,mid,late,leave] = frg_epoch(postlong_EEG,'TRIGGER EVENT N',[-1 2],save_mode);
 
 %%
 % early = pop_loadset('filename', '31730_preshort_early_FZ-CZ_theta-gamma.set','filepath','/home/decision_lab/work/github/frg/data/pac_data')
@@ -201,14 +214,33 @@ for idx = 1:length(subids)
     
 end
 
-function eeg = frg_bandpass_clean(eeg)
-    freqs = [0.5 120];
-    wtype = 'hamming'; df = 1; m = pop_firwsord(wtype,eeg.srate,df);
-    eeg = pop_firws(eeg,'wtype',wtype,'ftype','bandpass','fcutoff',freqs,'forder',m);
-    
+function eeg = frg_filt_clean_ica(eeg,thresh)
     eeg = clean_data_with_zapline_plus_eeglab_wrapper(eeg,struct('noisefreqs',60, ...
                                        'chunkLength',0,'adaptiveNremove',true, ...
                                        'fixedNremove',1,'plotResults',0));
+
+    freqs = [2 120];
+    wtype = 'hamming'; df = 1; m = pop_firwsord(wtype,eeg.srate,df);
+    eeg_ica = pop_firws(eeg,'wtype',wtype,'ftype','bandpass','fcutoff',freqs,'forder',m);
+    
+    freqs = [0.5 120];
+    wtype = 'hamming'; df = 1; m = pop_firwsord(wtype,eeg.srate,df);
+    eeg = pop_firws(eeg,'wtype',wtype,'ftype','bandpass','fcutoff',freqs,'forder',m);
+
+    eeg_ica = pop_runica(eeg_ica,'icatype','runica','extended',1,'interrupt','off');
+
+    eeg_fields = fieldnames(eeg);
+    eeg_icafields = eeg_fields(contains(fieldnames(eeg),'ica'));
+
+    for idx=1:size(eeg_icafields)
+        eval(['eeg.' char(eeg_icafields(idx)) ' = eeg_ica.' char(eeg_icafields(idx))])
+    end
+%          [ Brain,Muscle, Eye, Heart, Line,Channel,Other ]
+%     thresh = [0 0; 0.67 1; 0.67 1; 0 0; 0.8 1; 0.8 1; 0 0];
+    eeg = pop_iclabel(eeg,'Default');
+    eeg = pop_icflag(eeg,thresh);
+    rejected_comps = find(eeg.reject.gcompreject > 0);
+    eeg = pop_subcomp(eeg,rejected_comps);
 end
 
 function [ep_dat,early,mid,late,leave] = frg_epoch(raw_eeg,event_str,epoch_lims,saveflag)
@@ -233,14 +265,16 @@ function [ep_dat,early,mid,late,leave] = frg_epoch(raw_eeg,event_str,epoch_lims,
     mid = pop_select(ep_dat,'trial',find([ep_dat.epoch(:).cat_latency]==2));
     late = pop_select(ep_dat,'trial',find([ep_dat.epoch(:).cat_latency]==3));
     leave = pop_select(ep_dat,'trial',find([ep_dat.epoch(:).cat_latency]==4));
+
     if saveflag
-        early = pop_saveset(early,'filename',[num2str(subid) '_preshort_early.set'],...
-                            'filepath',[data_path '/' num2str(subid)],'savemode','onefile');
-        mid = pop_saveset(mid,'filename',[num2str(subid) '_preshort_mid.set'],...
-                            'filepath',[data_path '/' num2str(subid)],'savemode','onefile');
-        late = pop_saveset(late,'filename',[num2str(subid) '_preshort_late.set'],...
-                            'filepath',[data_path '/' num2str(subid)],'savemode','onefile');
-        leave = pop_saveset(leave,'filename',[num2str(subid) '_preshort_leave.set'],...
-                            'filepath',[data_path '/' num2str(subid)],'savemode','onefile');
+        state_cond = inputname(1); prefix = state_cond(1:strfind(state_cond,'_')-1);
+        early = pop_saveset(early,'filename',[num2str(subid) '_' prefix '_early.set'],...
+                            'filepath',[data_path '/epoch_data/'],'savemode','onefile');
+        mid = pop_saveset(mid,'filename',[num2str(subid) '_' prefix '_mid.set'],...
+                            'filepath',[data_path '/epoch_data/'],'savemode','onefile');
+        late = pop_saveset(late,'filename',[num2str(subid) '_' prefix '_late.set'],...
+                            'filepath',[data_path '/epoch_data/'],'savemode','onefile');
+        leave = pop_saveset(leave,'filename',[num2str(subid) '_' prefix '_leave.set'],...
+                            'filepath',[data_path '/epoch_data/'],'savemode','onefile');
     end
 end
