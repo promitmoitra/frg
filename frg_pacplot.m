@@ -128,7 +128,21 @@ anx_cat = 'low_anx';
 % title([anx_cat,' ',sc])
 
 x = mean_ermi.(sc).early.high_anx.tpts;
-
+%%
+%%% Loop over trial_categories, define
+%%% figure;hold on
+%%% for tc=1:length(trial_categories)
+%%%     tcat=trial_categories(tc);
+%%%     y=mean_ermi.(sc).(tcat).(anx_cat).(chan_pair).ermi;
+%%%     y_sub_mean=mean(y,2);
+%%%     y_t_sub_mean=mean(y,'all');
+%%%     y_sub_err=std(y_sub_mean)/sqrt(length(y_sub_mean));
+%%%     y_t_sub_err=std(y_t_sub_mean)/sqrt(length(y_t_sub_mean));
+%%% end
+%%% Discuss what to plot: fluctuation around temporal mean and across 
+%%% subject variability at each timepoint
+%%% errorbar(1:4,[y1_mean,y2_mean,y3_mean,y4_mean],[y1_sem,y2_sem,y3_sem,y4_sem],'DisplayName',[anx_cat,' ',sc])
+%%
 y1 = mean(mean_ermi.(sc).early.(anx_cat).(chan_pair).ermi,2);
 y2 = mean(mean_ermi.(sc).mid.(anx_cat).(chan_pair).ermi  ,2);
 y3 = mean(mean_ermi.(sc).late.(anx_cat).(chan_pair).ermi ,2);
