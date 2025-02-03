@@ -1,21 +1,23 @@
 clear;clc;
-% eeglab_dir = '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
-% wrk_dir = '/home/decision_lab/work/github/frg/';
-% dir_sep = '/';
 
-dir_sep = '\';
+eeglab_dir = '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
+wrk_dir = '/home/decision_lab/work/github/frg/';
+dir_sep = '/';
+
+% dir_sep = '\';
 % eeglab_dir = "C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1\";
-eeglab_dir='E:\wrk\MATLAB Add-Ons\Collections\EEGLAB';
+% eeglab_dir='E:\wrk\MATLAB Add-Ons\Collections\EEGLAB';
+% wrk_dir = "C:\Users\promitmoitra\Documents\GitHub\frg\";
+
 cd(eeglab_dir)
 eeglab nogui;
 
-wrk_dir = "C:\Users\promitmoitra\Documents\GitHub\frg\";
 data_path = [char(wrk_dir),'data/'];
 cd(data_path)
 stai = readtable('frg_stai.csv');
 
-% pac_dir = [data_path 'epoch/pac_data/'];
-pac_dir = 'E:\wrk\Neuroflow\epoch\pac';
+pac_dir = [data_path 'epoch/pac/'];
+% pac_dir = 'E:\wrk\Neuroflow\epoch\pac';
 cd(pac_dir)
 
 %%
@@ -31,10 +33,10 @@ chan1 = 'FZ'; chan2 = 'CZ'; band1 = 'theta'; band2 = 'gamma';
 badids = [37532 38058 39862 43543 45528 47801 48278];
 % subids = [31730,43000];
 stai = sortrows(stai,"STAI_Trait");
-high_anx_subids = stai{end-10:end,["ParticipantID"]};
+high_anx_subids = stai{end-16:end,["ParticipantID"]};
 high_anx_subids = setdiff(high_anx_subids,badids)
 
-low_anx_subids = stai{1:10,["ParticipantID"]};
+low_anx_subids = stai{1:15,["ParticipantID"]};
 low_anx_subids = setdiff(low_anx_subids,badids)
 
 %%
@@ -117,101 +119,99 @@ end
 figure; hold on;
 chan_pair = 'FZ_CZ';
 
+% anx_cat = 'high_anx';
+anx_cat = 'low_anx';
+
 % sc = 'preshort';
 % sc = 'prelong';
 sc = 'postshort';
 % sc = 'postlong';
 
-% anx_cat = 'high_anx';
-anx_cat = 'low_anx';
-
-% title([anx_cat,' ',sc])
-
 x = mean_ermi.(sc).early.high_anx.tpts;
 %%
-%%% Loop over trial_categories, define
-%%% figure;hold on
-%%% for tc=1:length(trial_categories)
-%%%     tcat=trial_categories(tc);
-%%%     y=mean_ermi.(sc).(tcat).(anx_cat).(chan_pair).ermi;
-%%%     y_sub_mean=mean(y,2);
-%%%     y_t_sub_mean=mean(y,'all');
-%%%     y_sub_err=std(y_sub_mean)/sqrt(length(y_sub_mean));
-%%%     y_t_sub_err=std(y_t_sub_mean)/sqrt(length(y_t_sub_mean));
-%%% end
+figure;hold on
+for tc = 1:length(trial_categories)
+    tcat = trial_categories{tc};
+    y = mean_ermi.(sc).(tcat).(anx_cat).(chan_pair).ermi;
+    y_t_mean = mean(y,1);
+    y_sub_mean = mean(y,2);
+    y_t_sub_mean = mean(y,'all');
+    y_sub_err = std(y_sub_mean)/sqrt(length(y_sub_mean));
+    y_t_sub_err = std(y_t_sub_mean)/sqrt(length(y_t_sub_mean));
+end
 %%% Discuss what to plot: fluctuation around temporal mean and across 
 %%% subject variability at each timepoint
 %%% errorbar(1:4,[y1_mean,y2_mean,y3_mean,y4_mean],[y1_sem,y2_sem,y3_sem,y4_sem],'DisplayName',[anx_cat,' ',sc])
 %%
-y1 = mean(mean_ermi.(sc).early.(anx_cat).(chan_pair).ermi,2);
-y2 = mean(mean_ermi.(sc).mid.(anx_cat).(chan_pair).ermi  ,2);
-y3 = mean(mean_ermi.(sc).late.(anx_cat).(chan_pair).ermi ,2);
-y4 = mean(mean_ermi.(sc).leave.(anx_cat).(chan_pair).ermi,2);
-% plot(x,y1,'DisplayName','early');
-% plot(x,y2,'DisplayName','mid');
-% plot(x,y3,'DisplayName','late');
-% plot(x,y4,'DisplayName','leave');
-
-y1_mean = mean(mean_ermi.(sc).early.(anx_cat).(chan_pair).ermi,'all');
-y2_mean = mean(mean_ermi.(sc).mid.(anx_cat).(chan_pair).ermi  ,'all');
-y3_mean = mean(mean_ermi.(sc).late.(anx_cat).(chan_pair).ermi ,'all');
-y4_mean = mean(mean_ermi.(sc).leave.(anx_cat).(chan_pair).ermi,'all');
-% plot(x,y1_mean*ones(size(x)),'DisplayName','early');
-% plot(x,y2_mean*ones(size(x)),'DisplayName','mid');
-% plot(x,y3_mean*ones(size(x)),'DisplayName','late');
-% plot(x,y4_mean*ones(size(x)),'DisplayName','leave');
-
-y1_sem = std(y1)/sqrt(length(y1));
-y2_sem = std(y2)/sqrt(length(y2));
-y3_sem = std(y3)/sqrt(length(y3));
-y4_sem = std(y4)/sqrt(length(y4));
-% errorbar(x,y1,y1_sem,'--k','HandleVisibility','off');
-% errorbar(x,y2,y2_sem,'--k','HandleVisibility','off');
-% errorbar(x,y3,y3_sem,'--k','HandleVisibility','off');
-% errorbar(x,y4,y4_sem,'--k','HandleVisibility','off');
+% y1 = mean(mean_ermi.(sc).early.(anx_cat).(chan_pair).ermi,2);
+% y2 = mean(mean_ermi.(sc).mid.(anx_cat).(chan_pair).ermi  ,2);
+% y3 = mean(mean_ermi.(sc).late.(anx_cat).(chan_pair).ermi ,2);
+% y4 = mean(mean_ermi.(sc).leave.(anx_cat).(chan_pair).ermi,2);
+% % plot(x,y1,'DisplayName','early');
+% % plot(x,y2,'DisplayName','mid');
+% % plot(x,y3,'DisplayName','late');
+% % plot(x,y4,'DisplayName','leave');
+% 
+% y1_mean = mean(mean_ermi.(sc).early.(anx_cat).(chan_pair).ermi,'all');
+% y2_mean = mean(mean_ermi.(sc).mid.(anx_cat).(chan_pair).ermi  ,'all');
+% y3_mean = mean(mean_ermi.(sc).late.(anx_cat).(chan_pair).ermi ,'all');
+% y4_mean = mean(mean_ermi.(sc).leave.(anx_cat).(chan_pair).ermi,'all');
+% % plot(x,y1_mean*ones(size(x)),'DisplayName','early');
+% % plot(x,y2_mean*ones(size(x)),'DisplayName','mid');
+% % plot(x,y3_mean*ones(size(x)),'DisplayName','late');
+% % plot(x,y4_mean*ones(size(x)),'DisplayName','leave');
+% 
+% y1_sem = std(y1)/sqrt(length(y1));
+% y2_sem = std(y2)/sqrt(length(y2));
+% y3_sem = std(y3)/sqrt(length(y3));
+% y4_sem = std(y4)/sqrt(length(y4));
+% % errorbar(x,y1,y1_sem,'--k','HandleVisibility','off');
+% % errorbar(x,y2,y2_sem,'--k','HandleVisibility','off');
+% % errorbar(x,y3,y3_sem,'--k','HandleVisibility','off');
+% % errorbar(x,y4,y4_sem,'--k','HandleVisibility','off');
+% % legend;
+% 
+% anx_cat(strfind(anx_cat,'_'))='-';
+% errorbar(1:4,[y1_mean,y2_mean,y3_mean,y4_mean],[y1_sem,y2_sem,y3_sem,y4_sem],'DisplayName',[anx_cat,' ',sc])
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% anx_cat = 'high_anx';
+% % anx_cat = 'low_anx';
+% 
+% % fig_lower = figure('OuterPosition',[-0.0078    0.0362    1.5504    0.4480]*1e3); hold on;
+% 
+% % sc = 'preshort'; 
+% % sc = 'prelong'; 
+% % sc = 'postshort';
+% % sc = 'postlong'; 
+% 
+% y1 = mean(mean_ermi.(sc).early.(anx_cat).(chan_pair).ermi,2);
+% y2 = mean(mean_ermi.(sc).mid.(anx_cat).(chan_pair).ermi  ,2);
+% y3 = mean(mean_ermi.(sc).late.(anx_cat).(chan_pair).ermi ,2);
+% y4 = mean(mean_ermi.(sc).leave.(anx_cat).(chan_pair).ermi,2);
+% % plot(x,y1,'DisplayName','early');
+% % plot(x,y2,'DisplayName','mid');
+% % plot(x,y3,'DisplayName','late');
+% % plot(x,y4,'DisplayName','leave')
+% 
+% y1_mean = mean(mean_ermi.(sc).early.(anx_cat).(chan_pair).ermi,'all');
+% y2_mean = mean(mean_ermi.(sc).mid.(anx_cat).(chan_pair).ermi  ,'all');
+% y3_mean = mean(mean_ermi.(sc).late.(anx_cat).(chan_pair).ermi ,'all');
+% y4_mean = mean(mean_ermi.(sc).leave.(anx_cat).(chan_pair).ermi,'all');
+% % plot(x,y1_mean*ones(size(x)),'DisplayName','early');
+% % plot(x,y2_mean*ones(size(x)),'DisplayName','mid');
+% % plot(x,y3_mean*ones(size(x)),'DisplayName','late');
+% % plot(x,y4_mean*ones(size(x)),'DisplayName','leave');
+% 
+% y1_sem = std(y1)/sqrt(length(y1));
+% y2_sem = std(y2)/sqrt(length(y2));
+% y3_sem = std(y3)/sqrt(length(y3));
+% y4_sem = std(y4)/sqrt(length(y4));
+% % errorbar(x,y1,y1_sem,'--k','HandleVisibility','off');
+% % errorbar(x,y2,y2_sem,'--k','HandleVisibility','off');
+% % errorbar(x,y3,y3_sem,'--k','HandleVisibility','off');
+% % errorbar(x,y4,y4_sem,'--k','HandleVisibility','off');
+% 
+% anx_cat(strfind(anx_cat,'_'))='-';
+% errorbar(1:4,[y1_mean,y2_mean,y3_mean,y4_mean],[y1_sem,y2_sem,y3_sem,y4_sem],'DisplayName',[anx_cat,' ',sc])
 % legend;
-
-anx_cat(strfind(anx_cat,'_'))='-';
-errorbar(1:4,[y1_mean,y2_mean,y3_mean,y4_mean],[y1_sem,y2_sem,y3_sem,y4_sem],'DisplayName',[anx_cat,' ',sc])
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-anx_cat = 'high_anx';
-% anx_cat = 'low_anx';
-
-% fig_lower = figure('OuterPosition',[-0.0078    0.0362    1.5504    0.4480]*1e3); hold on;
-
-% sc = 'preshort'; 
-% sc = 'prelong'; 
-% sc = 'postshort';
-% sc = 'postlong'; 
-
-y1 = mean(mean_ermi.(sc).early.(anx_cat).(chan_pair).ermi,2);
-y2 = mean(mean_ermi.(sc).mid.(anx_cat).(chan_pair).ermi  ,2);
-y3 = mean(mean_ermi.(sc).late.(anx_cat).(chan_pair).ermi ,2);
-y4 = mean(mean_ermi.(sc).leave.(anx_cat).(chan_pair).ermi,2);
-% plot(x,y1,'DisplayName','early');
-% plot(x,y2,'DisplayName','mid');
-% plot(x,y3,'DisplayName','late');
-% plot(x,y4,'DisplayName','leave')
-
-y1_mean = mean(mean_ermi.(sc).early.(anx_cat).(chan_pair).ermi,'all');
-y2_mean = mean(mean_ermi.(sc).mid.(anx_cat).(chan_pair).ermi  ,'all');
-y3_mean = mean(mean_ermi.(sc).late.(anx_cat).(chan_pair).ermi ,'all');
-y4_mean = mean(mean_ermi.(sc).leave.(anx_cat).(chan_pair).ermi,'all');
-% plot(x,y1_mean*ones(size(x)),'DisplayName','early');
-% plot(x,y2_mean*ones(size(x)),'DisplayName','mid');
-% plot(x,y3_mean*ones(size(x)),'DisplayName','late');
-% plot(x,y4_mean*ones(size(x)),'DisplayName','leave');
-
-y1_sem = std(y1)/sqrt(length(y1));
-y2_sem = std(y2)/sqrt(length(y2));
-y3_sem = std(y3)/sqrt(length(y3));
-y4_sem = std(y4)/sqrt(length(y4));
-% errorbar(x,y1,y1_sem,'--k','HandleVisibility','off');
-% errorbar(x,y2,y2_sem,'--k','HandleVisibility','off');
-% errorbar(x,y3,y3_sem,'--k','HandleVisibility','off');
-% errorbar(x,y4,y4_sem,'--k','HandleVisibility','off');
-
-anx_cat(strfind(anx_cat,'_'))='-';
-errorbar(1:4,[y1_mean,y2_mean,y3_mean,y4_mean],[y1_sem,y2_sem,y3_sem,y4_sem],'DisplayName',[anx_cat,' ',sc])
-legend;
