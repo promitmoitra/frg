@@ -116,31 +116,88 @@ end
 
 %%
 % fig_upper = figure('OuterPosition',[-0.0158    0.3962    1.5536    0.4688]*1e3); hold on;
-figure; hold on;
+cd(wrk_dir);
+mean_ermi=load('./ermi.mat');
+%%
 chan_pair = 'FZ_CZ';
 
-% anx_cat = 'high_anx';
-anx_cat = 'low_anx';
+% anx_cat = 'low_anx';
+anx_cat = 'high_anx';
 
 % sc = 'preshort';
 % sc = 'prelong';
 sc = 'postshort';
 % sc = 'postlong';
 
-x = mean_ermi.(sc).early.high_anx.tpts;
-%%
-figure;hold on
+% x = mean_ermi.(sc).early.high_anx.tpts;
+
+% txt = 'short'; var_lvl = sc;
+txt = 'pre'; var_lvl = sc;
+% txt = 'low'; var_lvl = anx_cat;
+if contains(var_lvl,txt)
+    figure('OuterPosition',[246 131 922 923]);hold on;
+%     title('Effect of anxiety and travel time - post stress')
+%     labels = {'low anx short','high anx short','low anx long','high anx long'};
+%     title('Effect of anxiety and stress - long')
+%     labels = {'low anx pre','high anx pre','low anx post','high anx post'};
+    title('Effect of stress and travel time - high anx')
+    labels = {'pre short','pre long','post short','post long'};
+end    
+ax=gca;
+lwid = 2; msiz = 8;
+
+% t_mean = [];
+% sub_mean = [];
 for tc = 1:length(trial_categories)
     tcat = trial_categories{tc};
     y = mean_ermi.(sc).(tcat).(anx_cat).(chan_pair).ermi;
+%     y_sub_mean = mean(y,2);
+%     y_err = std(y_sub_mean)/sqrt(length(y_sub_mean));
+%     sub_mean(:,end+1) = y_sub_mean;
     y_t_mean = mean(y,1);
-    y_sub_mean = mean(y,2);
     y_t_sub_mean = mean(y,'all');
-    y_sub_err = std(y_sub_mean)/sqrt(length(y_sub_mean));
-    y_t_sub_err = std(y_t_sub_mean)/sqrt(length(y_t_sub_mean));
+    y_err = std(y_t_mean)/sqrt(length(y_t_mean));
+    if contains(var_lvl,txt)
+        hbo=errorbar(tc,y_t_sub_mean,y_err,'bo','LineWidth',lwid,'MarkerSize',msiz);%,'DisplayName',[tcat '- low'])
+    else
+        hbx=errorbar(tc,y_t_sub_mean,y_err,'bx','LineWidth',lwid,'MarkerSize',msiz);
+    end
+    xticks(1:4);xticklabels(trial_categories);xlim([0.5 4.5])
 end
-%%% Discuss what to plot: fluctuation around temporal mean and across 
-%%% subject variability at each timepoint
+% legend;
+
+% anx_cat = 'low_anx';
+% anx_cat = 'high_anx';
+
+% sc = 'preshort';
+% sc = 'prelong';
+% sc = 'postshort';
+sc = 'postlong';
+
+for tc = 1:length(trial_categories)
+    tcat = trial_categories{tc};
+    y = mean_ermi.(sc).(tcat).(anx_cat).(chan_pair).ermi;
+%     y_sub_mean = mean(y,2);
+%     y_err = std(y_sub_mean)/sqrt(length(y_sub_mean));
+%     sub_mean(:,end+1) = y_sub_mean;
+    y_t_mean = mean(y,1);
+    y_t_sub_mean = mean(y,'all');
+    y_err = std(y_t_mean)/sqrt(length(y_t_mean));
+    if contains(var_lvl,txt)
+        hro=errorbar(tc,y_t_sub_mean,y_err,'ro','LineWidth',lwid,'MarkerSize',msiz);%,'DisplayName',[tcat '- high'])
+    else
+        hrx=errorbar(tc,y_t_sub_mean,y_err,'rx','LineWidth',lwid,'MarkerSize',msiz);
+    end
+    xticks(1:4);xticklabels(trial_categories);xlim([0.5 4.5])
+end
+xlabel('Patch level latency');ylabel('FZ-CZ Theta-Gamma Event Rel. PAC Mod. Index');
+
+if ~contains(var_lvl,txt)
+    hleg = legend([hbo,hro,hbx,hrx],labels);
+end    
+
+%%% Discuss what to plot: fluctuation around temporal mean (y_sub_err) 
+%%% and across subject variability at each timepoint (y_t_err)
 %%% errorbar(1:4,[y1_mean,y2_mean,y3_mean,y4_mean],[y1_sem,y2_sem,y3_sem,y4_sem],'DisplayName',[anx_cat,' ',sc])
 %%
 % y1 = mean(mean_ermi.(sc).early.(anx_cat).(chan_pair).ermi,2);
