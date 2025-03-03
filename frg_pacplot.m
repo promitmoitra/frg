@@ -20,8 +20,8 @@ trait_anx_cat = discretize(anx_score,[min(anx_score):12:max(anx_score)+12]);
 stai.("trait_anx_cat") = trait_anx_cat;
 
 % pac_dir = [data_path 'epoch/pac/'];
-pac_dir = 'E:\wrk\Neuroflow\epoch\pac';
-cd(pac_dir)
+% pac_dir = 'E:\wrk\Neuroflow\epoch\pac';
+% cd(pac_dir)
 
 %%
 % set_fnames = dir('./*.set');
@@ -33,6 +33,7 @@ stress_conds = {'pre','post'};
 tt_envs = {'short','long'};
 trial_categories = {'early','mid','late','leave'};
 chan1 = 'FZ'; chan2 = 'CZ'; band1 = 'theta'; band2 = 'gamma';
+chan_pair = [chan1,'_',chan2];
 
 %%
 badids = [37532 38058 39862 43543 45528 47801 48278];
@@ -70,54 +71,53 @@ badids = [37532 38058 39862 43543 45528 47801 48278];
 % [outdata,erp] = frg_plottrialpac(eeg_dat,'plotindx',chan_pair_idx,...
 %                             'timerange',[-500 0],'freqval1',5.5,'freqval2',30);
 
-% mean_ermi = struct();
-% 
-% for anx_cat_idx = 1:length(anx_cats)
-%     anx_cat = anx_cats{anx_cat_idx};
-%     subids = table2array(stai(stai.trait_anx_cat==anx_cat_idx,["ParticipantID"]));
-%     subids = setdiff(subids,badids);
-%     mean_ermi.(anx_cat) = struct();
-%     mean_ermi.(anx_cat).tpts = [];
-%     for sc_idx = 1:length(stress_conds)
-%         sc = stress_conds{sc_idx};
-%         mean_ermi.(anx_cat).(sc) = struct();
-%         for env_idx = 1:length(tt_envs)
-%             env = tt_envs{env_idx};
-%             mean_ermi.(anx_cat).(sc).(env) = struct();
-%             sctt = [sc,env];
-%             for cat_idx = 1:length(trial_categories)
-%                 tcat = trial_categories{cat_idx};
-%                 mean_ermi.(anx_cat).(sc).(env).(tcat) = struct();
-% 
-%                 for sub_idx = 1:length(subids)
-%                     subid = subids(sub_idx);
-%                     fname = strjoin({num2str(subid),sctt,tcat,chan1,chan2,band1,band2},'_');
-%                     try
-%                         eeg_dat = pop_loadset('filename',[fname '.set'],'filepath',pac_dir);
-%                         for chan_pair_idx = 1:length([eeg_dat.etc.eegpac.labels])
-%                             chan_pair = char(eeg_dat.etc.eegpac(chan_pair_idx).labels);
-%                             chan_pair(strfind(chan_pair,'-')) = '_';
-%                             if ~sum(contains(fieldnames(mean_ermi.(anx_cat).(sc).(env).(tcat)),chan_pair))
-%                                 mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair) = struct();
-%                                 mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair).ermi = [];
-%                             end
-%                             [out,ermi,tpts] = frg_plottrialpac(eeg_dat,...
-%                                          'plotindx',chan_pair_idx,...
-%                                          'freqval1',5.5,'freqval2',35,...
-%                                          'timerange',[-500 0]);
-%                              C1 = size(out,2);
-%                              mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair).ermi(:,end+1:end+C1) = out;
-%                         end
-%                     catch
-%                         sprintf('%s not found',fname)
-%                         % pause(3)
-%                     end
-%                 end
-%             end
-%         end
-%     end
-%     mean_ermi.(anx_cat).tpts = tpts;
-% end
+mean_ermi = struct();
+
+for anx_cat_idx = 1:length(anx_cats)
+    anx_cat = anx_cats{anx_cat_idx};
+    subids = table2array(stai(stai.trait_anx_cat==anx_cat_idx,["ParticipantID"]));
+    subids = setdiff(subids,badids);
+    mean_ermi.(anx_cat) = struct();
+    mean_ermi.(anx_cat).tpts = [];
+    for sc_idx = 1:length(stress_conds)
+        sc = stress_conds{sc_idx};
+        mean_ermi.(anx_cat).(sc) = struct();
+        for env_idx = 1:length(tt_envs)
+            env = tt_envs{env_idx};
+            mean_ermi.(anx_cat).(sc).(env) = struct();
+            sctt = [sc,env];
+            for cat_idx = 1:length(trial_categories)
+                tcat = trial_categories{cat_idx};
+                mean_ermi.(anx_cat).(sc).(env).(tcat) = struct();
+
+                for sub_idx = 1:length(subids)
+                    subid = subids(sub_idx);
+                    fname = strjoin({num2str(subid),sctt,tcat,chan1,chan2,band1,band2},'_');
+                    try
+                        eeg_dat = pop_loadset('filename',[fname '.set'],'filepath',pac_dir);
+                        for chan_pair_idx = 1:length([eeg_dat.etc.eegpac.labels])
+                            chan_pair = char(eeg_dat.etc.eegpac(chan_pair_idx).labels);
+                            chan_pair(strfind(chan_pair,'-')) = '_';
+                            if ~sum(contains(fieldnames(mean_ermi.(anx_cat).(sc).(env).(tcat)),chan_pair))
+                                mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair) = struct();
+                                mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair).ermi = [];
+                            end
+                            [out,ermi,tpts] = frg_plottrialpac(eeg_dat,...
+                                         'plotindx',chan_pair_idx,...
+                                         'freqval1',5.5,'freqval2',35,...
+                                         'timerange',[0 500]);
+                             C1 = size(out,2);
+                             mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair).ermi(:,end+1:end+C1) = out;
+                        end
+                    catch
+                        sprintf('%s not found',fname)
+                    end
+                end
+            end
+        end
+    end
+    mean_ermi.(anx_cat).tpts = tpts;
+end
 % cd(wrk_dir)
 % save('ermi.mat','mean_ermi')
 %%
@@ -126,7 +126,6 @@ cd(wrk_dir);
 % mean_ermi=
 load('./ermi.mat');
 %%
-chan_pair = 'FZ_CZ';
 
 anx_cats = {'low','mid'};
 % anx_cats = {'mid','high'};
@@ -141,13 +140,13 @@ tt_envs = {'short','long'};
 % var_fixed=tt;
 % var_order=[1,2,3];
 
-% var_lvl1=stress_conds;
-% var_lvl2=tt_envs;
+var_lvl1=stress_conds;
+var_lvl2=tt_envs;
 % anx_cat = 'low';
-% % anx_cat = 'mid';
-% % anx_cat = 'high';
-% var_fixed=anx_cat;
-% var_order=[3,1,2];
+anx_cat = 'mid';
+% anx_cat = 'high';
+var_fixed=anx_cat;
+var_order=[3,1,2];
 
 % var_lvl1=tt_envs;
 % var_lvl2=anx_cats;
@@ -157,6 +156,7 @@ tt_envs = {'short','long'};
 % var_order=[2,3,1];
 
 figure('OuterPosition',[246 131 922 923]);hold on;
+lwid=2;msiz=8;
 hdl=[];lbl={};
 clrs=['b','r'];mrks=['o','s'];
 
@@ -198,25 +198,26 @@ tt_envs = {'short','long'};
 
 % var_lvl1=stress_conds;
 % tt = 'short';
-% % tt = 'long';
+% tt = 'long';
 % var_fixed1=tt;
 % anx_cat = 'low';
-% % anx_cat = 'mid';
-% % anx_cat = 'high';
+% anx_cat = 'mid';
+% anx_cat = 'high';
 % var_fixed2=anx_cat;
 % var_order=[3,1,2];
 
-var_lvl1=tt_envs;
-anx_cat = 'low';
-% anx_cat = 'mid';
-% anx_cat = 'high';
-var_fixed1=anx_cat;
-sc = 'pre';
-% sc = 'post';
-var_fixed2=sc;
-var_order=[2,3,1];
+% var_lvl1=tt_envs;
+% anx_cat = 'low';
+% % anx_cat = 'mid';
+% % anx_cat = 'high';
+% var_fixed1=anx_cat;
+% sc = 'pre';
+% % sc = 'post';
+% var_fixed2=sc;
+% var_order=[2,3,1];
 
 figure('OuterPosition',[246 131 922 923]);hold on;
+lwid=2;msiz=8;
 hdl=[];lbl={};
 clrs=['b','g','r'];mrks=['o','s','d'];
 
@@ -238,19 +239,33 @@ for var_idx1 = 1:length(var_lvl1)
 end
 legend(hdl,lbl)
 %%
-num_plot=2;
+var_n={};
+
 % anx_cat='low';sc='post';tt='long';
 % var_n{1} = {anx_cat,sc,tt};
 % anx_cat='mid';sc='pre';tt='long';
 % var_n{2} = {anx_cat,sc,tt};
+% anx_cat='high';sc='pre';tt='long';
+% var_n{3} = {anx_cat,sc,tt};
 
-anx_cat='low';sc='pre';tt='long';
-var_n{1} = {anx_cat,sc,tt};
-anx_cat='mid';sc='post';tt='short';
-var_n{2} = {anx_cat,sc,tt};
+% anx_cat='low';sc='pre';tt='long';
+% var_n{1} = {anx_cat,sc,tt};
+% anx_cat='mid';sc='pre';tt='short';
+% var_n{2} = {anx_cat,sc,tt};
+% anx_cat='high';sc='post';tt='long';
+% var_n{3} = {anx_cat,sc,tt};
 
+% anx_cat='mid';sc='pre';tt='long';
+% var_n{1} = {anx_cat,sc,tt};
+% anx_cat='mid';sc='post';tt='short';
+% var_n{2} = {anx_cat,sc,tt};
+% anx_cat='mid';sc='post';tt='long';
+% var_n{3} = {anx_cat,sc,tt};
+
+num_plot=length(var_n);
+lwid=2;msiz=8;
 hdl=[];lbl={};
-clrs = ['b','r'];
+clrs = ['b','g','r'];
 for idx = 1:num_plot
     if idx==1
         figure('OuterPosition',[246 131 922 923]);hold on;
