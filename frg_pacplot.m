@@ -1,16 +1,16 @@
 clear;clc;
 
-% eeglab_dir = '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
-% wrk_dir = '/home/decision_lab/work/github/frg/';
-% dir_sep = '/';
+eeglab_dir = '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
+wrk_dir = '/home/decision_lab/work/github/frg/';
+dir_sep = '/';
 
-dir_sep = '\';
-% eeglab_dir = "C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1\";
-eeglab_dir='E:\wrk\MATLAB Add-Ons\Collections\EEGLAB';
-wrk_dir = "C:\Users\promitmoitra\Documents\GitHub\frg\";
+% dir_sep = '\';
+% % eeglab_dir = "C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1\";
+% eeglab_dir='E:\wrk\MATLAB Add-Ons\Collections\EEGLAB';
+% wrk_dir = "C:\Users\promitmoitra\Documents\GitHub\frg\";
+% pac_dir = 'E:\wrk\Neuroflow\epoch\pac';
 
-% cd(eeglab_dir)
-% eeglab nogui;
+% cd(eeglab_dir); eeglab nogui;
 
 data_path = [char(wrk_dir),'data/'];
 cd(wrk_dir)
@@ -19,21 +19,14 @@ anx_score = table2array(stai(:,["STAI_Trait"]));
 trait_anx_cat = discretize(anx_score,[min(anx_score):12:max(anx_score)+12]);
 stai.("trait_anx_cat") = trait_anx_cat;
 
-% pac_dir = [data_path 'epoch/pac/'];
-% pac_dir = 'E:\wrk\Neuroflow\epoch\pac';
-% cd(pac_dir)
-
-%%
-% set_fnames = dir('./*.set');
-% fname_split = split({set_fnames(:).name},'_');
-% subids = unique(str2num(char(fname_split(:,:,1))));
-
 anx_cats = {'low','mid','high'};
 stress_conds = {'pre','post'};
 tt_envs = {'short','long'};
 trial_categories = {'early','mid','late','leave'};
 chan1 = 'FZ'; chan2 = 'CZ'; band1 = 'theta'; band2 = 'gamma';
 chan_pair = [chan1,'_',chan2];
+cd(wrk_dir);
+load('./ermi.mat');
 
 %%
 badids = [37532 38058 39862 43543 45528 47801 48278];
@@ -71,62 +64,65 @@ badids = [37532 38058 39862 43543 45528 47801 48278];
 % [outdata,erp] = frg_plottrialpac(eeg_dat,'plotindx',chan_pair_idx,...
 %                             'timerange',[-500 0],'freqval1',5.5,'freqval2',30);
 
-mean_ermi = struct();
-
-for anx_cat_idx = 1:length(anx_cats)
-    anx_cat = anx_cats{anx_cat_idx};
-    subids = table2array(stai(stai.trait_anx_cat==anx_cat_idx,["ParticipantID"]));
-    subids = setdiff(subids,badids);
-    mean_ermi.(anx_cat) = struct();
-    mean_ermi.(anx_cat).tpts = [];
-    for sc_idx = 1:length(stress_conds)
-        sc = stress_conds{sc_idx};
-        mean_ermi.(anx_cat).(sc) = struct();
-        for env_idx = 1:length(tt_envs)
-            env = tt_envs{env_idx};
-            mean_ermi.(anx_cat).(sc).(env) = struct();
-            sctt = [sc,env];
-            for cat_idx = 1:length(trial_categories)
-                tcat = trial_categories{cat_idx};
-                mean_ermi.(anx_cat).(sc).(env).(tcat) = struct();
-
-                for sub_idx = 1:length(subids)
-                    subid = subids(sub_idx);
-                    fname = strjoin({num2str(subid),sctt,tcat,chan1,chan2,band1,band2},'_');
-                    try
-                        eeg_dat = pop_loadset('filename',[fname '.set'],'filepath',pac_dir);
-                        for chan_pair_idx = 1:length([eeg_dat.etc.eegpac.labels])
-                            chan_pair = char(eeg_dat.etc.eegpac(chan_pair_idx).labels);
-                            chan_pair(strfind(chan_pair,'-')) = '_';
-                            if ~sum(contains(fieldnames(mean_ermi.(anx_cat).(sc).(env).(tcat)),chan_pair))
-                                mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair) = struct();
-                                mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair).ermi = [];
-                            end
-                            [out,ermi,tpts] = frg_plottrialpac(eeg_dat,...
-                                         'plotindx',chan_pair_idx,...
-                                         'freqval1',5.5,'freqval2',35,...
-                                         'timerange',[0 500]);
-                             C1 = size(out,2);
-                             mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair).ermi(:,end+1:end+C1) = out;
-                        end
-                    catch
-                        sprintf('%s not found',fname)
-                    end
-                end
-            end
-        end
-    end
-    mean_ermi.(anx_cat).tpts = tpts;
-end
+% pac_dir = [data_path 'epoch/pac/'];
+% cd(pac_dir)
+% 
+% set_fnames = dir('./*.set');
+% fname_split = split({set_fnames(:).name},'_');
+% subids = unique(str2num(char(fname_split(:,:,1))));
+% 
+% mean_ermi = struct();
+% 
+% for anx_cat_idx = 1:length(anx_cats)
+%     anx_cat = anx_cats{anx_cat_idx};
+%     subids = table2array(stai(stai.trait_anx_cat==anx_cat_idx,["ParticipantID"]));
+%     subids = setdiff(subids,badids);
+%     mean_ermi.(anx_cat) = struct();
+%     mean_ermi.(anx_cat).tpts = [];
+%     for sc_idx = 1:length(stress_conds)
+%         sc = stress_conds{sc_idx};
+%         mean_ermi.(anx_cat).(sc) = struct();
+%         for env_idx = 1:length(tt_envs)
+%             env = tt_envs{env_idx};
+%             mean_ermi.(anx_cat).(sc).(env) = struct();
+%             sctt = [sc,env];
+%             for cat_idx = 1:length(trial_categories)
+%                 tcat = trial_categories{cat_idx};
+%                 mean_ermi.(anx_cat).(sc).(env).(tcat) = struct();
+% 
+%                 for sub_idx = 1:length(subids)
+%                     subid = subids(sub_idx);
+%                     fname = strjoin({num2str(subid),sctt,tcat,chan1,chan2,band1,band2},'_');
+%                     try
+%                         eeg_dat = pop_loadset('filename',[fname '.set'],'filepath',pac_dir);
+%                         for chan_pair_idx = 1:length([eeg_dat.etc.eegpac.labels])
+%                             chan_pair = char(eeg_dat.etc.eegpac(chan_pair_idx).labels);
+%                             chan_pair(strfind(chan_pair,'-')) = '_';
+%                             if ~sum(contains(fieldnames(mean_ermi.(anx_cat).(sc).(env).(tcat)),chan_pair))
+%                                 mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair) = struct();
+%                                 mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair).ermi = [];
+%                             end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                             [out,ermi,tpts] = frg_plottrialpac(eeg_dat,...
+%                                          'plotindx',chan_pair_idx,...
+%                                          'freqval1',5.5,'freqval2',35,...
+%                                          'timerange',[0 500]);
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                              C1 = size(out,2);
+%                              mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair).ermi(:,end+1:end+C1) = out;
+%                         end
+%                     catch
+%                         sprintf('%s not found',fname)
+%                     end
+%                 end
+%             end
+%         end
+%     end
+%     mean_ermi.(anx_cat).tpts = tpts;
+% end
 % cd(wrk_dir)
 % save('ermi.mat','mean_ermi')
 %%
-% fig_upper = figure('OuterPosition',[-0.0158    0.3962    1.5536    0.4688]*1e3); hold on;
-cd(wrk_dir);
-% mean_ermi=
-load('./ermi.mat');
-%%
-
 anx_cats = {'low','mid'};
 % anx_cats = {'mid','high'};
 % anx_cats = {'low','high'};
@@ -140,13 +136,13 @@ tt_envs = {'short','long'};
 % var_fixed=tt;
 % var_order=[1,2,3];
 
-var_lvl1=stress_conds;
-var_lvl2=tt_envs;
+% var_lvl1=stress_conds;
+% var_lvl2=tt_envs;
 % anx_cat = 'low';
-anx_cat = 'mid';
-% anx_cat = 'high';
-var_fixed=anx_cat;
-var_order=[3,1,2];
+% % anx_cat = 'mid';
+% % anx_cat = 'high';
+% var_fixed=anx_cat;
+% var_order=[3,1,2];
 
 % var_lvl1=tt_envs;
 % var_lvl2=anx_cats;
