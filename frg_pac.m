@@ -23,6 +23,12 @@ state_conditions = {'preshort','prelong', 'postshort', 'postlong'};
 trial_categories = {'early','mid','late','leave'};
 chan1 = 'FZ'; chan2 = 'T5';
 theta = [4 8]; gamma = [30 90];
+
+%% TODO: USE MESHGRID (and some string and char magic) ON {EEG.chanlocs.labels} to generate all chan pairs.
+% a = {EEG.chanlocs.labels}; b=a;
+% [A,B] = meshgrid(a,b);
+% c = char(string(A)+'_'+string(B))
+%% TODO: RUN pop_pac on copy of EEG struct, append EEG.etc.eegpac to epoch datafile.
 %%
 for idx = 1:length(subids)
     global subid; subid = subids(idx);

@@ -1,8 +1,8 @@
 clear;clc;
 
+dir_sep = '/';
 eeglab_dir = '/home/decision_lab/MATLAB Add-Ons/Collections/EEGLAB/';
 wrk_dir = '/home/decision_lab/work/github/frg/';
-dir_sep = '/';
 
 % dir_sep = '\';
 % % eeglab_dir = "C:\Users\promitmoitra\Documents\MATLAB\eeglab2023.1\";
@@ -10,9 +10,11 @@ dir_sep = '/';
 % wrk_dir = "C:\Users\promitmoitra\Documents\GitHub\frg\";
 % pac_dir = 'E:\wrk\Neuroflow\epoch\pac';
 
-% cd(eeglab_dir); eeglab nogui;
+cd(eeglab_dir); eeglab nogui;
 
 data_path = [char(wrk_dir),'data/'];
+epoch_dir = [data_path 'epoch/'];
+
 cd(wrk_dir)
 stai = readtable('frg_stai.csv');
 anx_score = table2array(stai(:,["STAI_Trait"]));
@@ -23,13 +25,13 @@ anx_cats = {'low','mid','high'};
 stress_conds = {'pre','post'};
 tt_envs = {'short','long'};
 trial_categories = {'early','mid','late','leave'};
-chan1 = 'FZ'; chan2 = 'CZ'; band1 = 'theta'; band2 = 'gamma';
-chan_pair = [chan1,'_',chan2];
-cd(wrk_dir);
-load('./ermi.mat');
+
+badids = [37532 38058 39862 43543 45528 47801 48278];
+
+% chan1 = 'FZ'; chan2 = {'CZ','T5'}; band1 = 'theta'; band2 = 'gamma';
+% chan_pair = [chan1,'_',chan2];
 
 %%
-badids = [37532 38058 39862 43543 45528 47801 48278];
 % subids = [31730,43000];
 % num_sub = 5;
 % stai = sortrows(stai,"STAI_Trait");
@@ -63,9 +65,8 @@ badids = [37532 38058 39862 43543 45528 47801 48278];
 % %                             'freqval1',5.5,'freqval2',30))
 % [outdata,erp] = frg_plottrialpac(eeg_dat,'plotindx',chan_pair_idx,...
 %                             'timerange',[-500 0],'freqval1',5.5,'freqval2',30);
-
-% pac_dir = [data_path 'epoch/pac/'];
-% cd(pac_dir)
+%%
+% cd(epoch_dir)
 % 
 % set_fnames = dir('./*.set');
 % fname_split = split({set_fnames(:).name},'_');
@@ -78,13 +79,13 @@ badids = [37532 38058 39862 43543 45528 47801 48278];
 %     subids = table2array(stai(stai.trait_anx_cat==anx_cat_idx,["ParticipantID"]));
 %     subids = setdiff(subids,badids);
 %     mean_ermi.(anx_cat) = struct();
-%     mean_ermi.(anx_cat).tpts = [];
 %     for sc_idx = 1:length(stress_conds)
 %         sc = stress_conds{sc_idx};
 %         mean_ermi.(anx_cat).(sc) = struct();
 %         for env_idx = 1:length(tt_envs)
 %             env = tt_envs{env_idx};
 %             mean_ermi.(anx_cat).(sc).(env) = struct();
+%             mean_ermi.(anx_cat).(sc).(env).tpts = [];
 %             sctt = [sc,env];
 %             for cat_idx = 1:length(trial_categories)
 %                 tcat = trial_categories{cat_idx};
@@ -92,9 +93,10 @@ badids = [37532 38058 39862 43543 45528 47801 48278];
 % 
 %                 for sub_idx = 1:length(subids)
 %                     subid = subids(sub_idx);
-%                     fname = strjoin({num2str(subid),sctt,tcat,chan1,chan2,band1,band2},'_');
+%                     fname = strjoin({num2str(subid),sctt,tcat},'_');
+% %                     fname = strjoin({num2str(subid),sctt,tcat,chan1,chan2,band1,band2},'_');
 %                     try
-%                         eeg_dat = pop_loadset('filename',[fname '.set'],'filepath',pac_dir);
+%                         eeg_dat = pop_loadset('filename',[fname '.set'],'filepath',epoch_dir);
 %                         for chan_pair_idx = 1:length([eeg_dat.etc.eegpac.labels])
 %                             chan_pair = char(eeg_dat.etc.eegpac(chan_pair_idx).labels);
 %                             chan_pair(strfind(chan_pair,'-')) = '_';
@@ -102,12 +104,12 @@ badids = [37532 38058 39862 43543 45528 47801 48278];
 %                                 mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair) = struct();
 %                                 mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair).ermi = [];
 %                             end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             [out,ermi,tpts] = frg_plottrialpac(eeg_dat,...
 %                                          'plotindx',chan_pair_idx,...
 %                                          'freqval1',5.5,'freqval2',35,...
 %                                          'timerange',[0 500]);
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                              C1 = size(out,2);
 %                              mean_ermi.(anx_cat).(sc).(env).(tcat).(chan_pair).ermi(:,end+1:end+C1) = out;
 %                         end
@@ -117,15 +119,19 @@ badids = [37532 38058 39862 43543 45528 47801 48278];
 %                 end
 %             end
 %         end
+%         mean_ermi.(anx_cat).(sc).(env).tpts = tpts;
 %     end
-%     mean_ermi.(anx_cat).tpts = tpts;
 % end
 % cd(wrk_dir)
-% save('ermi.mat','mean_ermi')
+% save('ermi_postcue.mat','mean_ermi')
 %%
-anx_cats = {'low','mid'};
+cd(wrk_dir);
+load('ermi_postcue.mat')
+chan_pair = 'FZ_CZ';
+%%
+% anx_cats = {'low','mid'};
 % anx_cats = {'mid','high'};
-% anx_cats = {'low','high'};
+anx_cats = {'low','high'};
 stress_conds = {'pre','post'};
 tt_envs = {'short','long'};
 
@@ -136,13 +142,13 @@ tt_envs = {'short','long'};
 % var_fixed=tt;
 % var_order=[1,2,3];
 
-% var_lvl1=stress_conds;
-% var_lvl2=tt_envs;
-% anx_cat = 'low';
-% % anx_cat = 'mid';
-% % anx_cat = 'high';
-% var_fixed=anx_cat;
-% var_order=[3,1,2];
+var_lvl1=stress_conds;
+var_lvl2=tt_envs;
+anx_cat = 'low';
+% anx_cat = 'mid';
+% anx_cat = 'high';
+var_fixed=anx_cat;
+var_order=[3,1,2];
 
 % var_lvl1=tt_envs;
 % var_lvl2=anx_cats;
@@ -164,7 +170,6 @@ for var_idx1 = 1:length(var_lvl1)
         lbl{end+1} = strjoin(var_n(var_order),'-');
         for tc = 1:length(trial_categories)
             tcat = trial_categories{tc};
-            %hardcoded
             y = eval(['mean_ermi.' strjoin(var_n(var_order),'.') '.(tcat).(chan_pair).ermi']);
             y_t_mean = mean(y,1);
             y_t_sub_mean = mean(y,'all');
@@ -178,8 +183,10 @@ for var_idx1 = 1:length(var_lvl1)
 end
 legend(hdl,lbl)
 %%
-anx_cats = {'low','mid','high'};
+% anx_cats = {'low','mid'};
+% anx_cats = {'mid','high'};
 % anx_cats = {'low','high'};
+anx_cats = {'low','mid','high'};
 stress_conds = {'pre','post'};
 tt_envs = {'short','long'};
 
@@ -194,11 +201,11 @@ tt_envs = {'short','long'};
 
 % var_lvl1=stress_conds;
 % tt = 'short';
-% tt = 'long';
+% % tt = 'long';
 % var_fixed1=tt;
 % anx_cat = 'low';
-% anx_cat = 'mid';
-% anx_cat = 'high';
+% % anx_cat = 'mid';
+% % anx_cat = 'high';
 % var_fixed2=anx_cat;
 % var_order=[3,1,2];
 
@@ -235,9 +242,13 @@ for var_idx1 = 1:length(var_lvl1)
 end
 legend(hdl,lbl)
 %%
+cd(wrk_dir);
+load('ermi_precue.mat')
+chan_pair = 'FZ_T5';
+
 var_n={};
 
-% anx_cat='low';sc='post';tt='long';
+% anx_cat='low';sc='pre';tt='long';
 % var_n{1} = {anx_cat,sc,tt};
 % anx_cat='mid';sc='pre';tt='long';
 % var_n{2} = {anx_cat,sc,tt};
@@ -289,4 +300,3 @@ legend(hdl,lbl)
 % %     labels = {'low anx pre','high anx pre','low anx post','high anx post'};
 % %     title('Effect of stress and travel time - low/high')
 % %     labels = {'pre short','pre long','post short','post long'};
-% end    
