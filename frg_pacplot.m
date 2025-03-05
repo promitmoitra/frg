@@ -182,123 +182,124 @@ badids = [37532 38058 39862 43543 45528 47801 48278];
 %     end
 % end
 % legend(hdl,lbl)
-% %%
-% % anx_cats = {'low','mid'};
-% % anx_cats = {'mid','high'};
-% % anx_cats = {'low','high'};
-% anx_cats = {'low','mid','high'};
-% stress_conds = {'pre','post'};
-% tt_envs = {'short','long'};
-% 
-% % var_lvl1=anx_cats;
-% % sc = 'pre';
-% % % sc = 'post';
-% % var_fixed1=sc;
-% % tt = 'short';
-% % % tt = 'long';
-% % var_fixed2=tt;
-% % var_order=[1,2,3];
-% 
-% % var_lvl1=stress_conds;
-% % tt = 'short';
-% % % tt = 'long';
-% % var_fixed1=tt;
-% % anx_cat = 'low';
-% % % anx_cat = 'mid';
-% % % anx_cat = 'high';
-% % var_fixed2=anx_cat;
-% % var_order=[3,1,2];
-% 
-% % var_lvl1=tt_envs;
-% % anx_cat = 'low';
-% % % anx_cat = 'mid';
-% % % anx_cat = 'high';
-% % var_fixed1=anx_cat;
-% % sc = 'pre';
-% % % sc = 'post';
-% % var_fixed2=sc;
-% % var_order=[2,3,1];
-% 
-% figure('OuterPosition',[246 131 922 923]);hold on;
-% lwid=2;msiz=8;
-% hdl=[];lbl={};
-% clrs=['b','g','r'];mrks=['o','s','d'];
-% 
-% for var_idx1 = 1:length(var_lvl1)
-%     var_name1 = var_lvl1{var_idx1};
-%     var_n = {var_name1,var_fixed1,var_fixed2};
-%     lbl{end+1} = strjoin(var_n(var_order),'-');
-%     for tc = 1:length(trial_categories)
-%         tcat = trial_categories{tc};
-%         y = eval(['mean_ermi.' strjoin(var_n(var_order),'.') '.(tcat).(chan_pair).ermi']);
-%         y_t_mean = mean(y,1);
-%         y_t_sub_mean = mean(y,'all');
-%         y_err = std(y_t_mean)/sqrt(length(y_t_mean));
-%         clr=clrs(var_idx1);mrk=mrks(var_idx1);
-%         h = errorbar(tc,y_t_sub_mean,y_err,[clr mrk],'LineWidth',lwid,'MarkerSize',msiz);
-%         xticks(1:4);xticklabels(trial_categories);xlim([0.5 4.5])
-%     end
-%     hdl(end+1) = h;
-% end
-% legend(hdl,lbl)
-% %%
-% cd(wrk_dir);
-% load('ermi_precue.mat')
-% 
-% var_n={};
-% 
-% anx_cat='low';sc='pre';tt='short';
+%%
+% anx_cats = {'low','mid'};
+% anx_cats = {'mid','high'};
+% anx_cats = {'low','high'};
+anx_cats = {'low','mid','high'};
+stress_conds = {'pre','post'};
+tt_envs = {'short','long'};
+
+% var_lvl1=anx_cats;
+% sc = 'pre';
+% % sc = 'post';
+% var_fixed1=sc;
+% tt = 'short';
+% % tt = 'long';
+% var_fixed2=tt;
+% var_order=[1,2,3];
+
+var_lvl1=stress_conds;
+tt = 'short';
+% tt = 'long';
+var_fixed1=tt;
+anx_cat = 'low';
+% anx_cat = 'mid';
+% anx_cat = 'high';
+var_fixed2=anx_cat;
+var_order=[3,1,2];
+
+% var_lvl1=tt_envs;
+% anx_cat = 'low';
+% % anx_cat = 'mid';
+% % anx_cat = 'high';
+% var_fixed1=anx_cat;
+% sc = 'pre';
+% % sc = 'post';
+% var_fixed2=sc;
+% var_order=[2,3,1];
+
+figure('OuterPosition',[246 131 922 923]);hold on;
+lwid=2;msiz=8;
+hdl=[];lbl={};
+clrs=['b','g','r'];mrks=['o','s','d'];
+
+for var_idx1 = 1:length(var_lvl1)
+    var_name1 = var_lvl1{var_idx1};
+    var_n = {var_name1,var_fixed1,var_fixed2};
+    lbl{end+1} = strjoin(var_n(var_order),'-');
+    for tc = 1:length(trial_categories)
+        tcat = trial_categories{tc};
+        y = eval(['mean_ermi.' strjoin(var_n(var_order),'.') '.(tcat).(chan_pair).ermi']);
+        y_t_mean = mean(y,1);
+        y_t_sub_mean = mean(y,'all');
+        y_err = std(y_t_mean)/sqrt(length(y_t_mean));
+        clr=clrs(var_idx1);mrk=mrks(var_idx1);
+        h = errorbar(tc,y_t_sub_mean,y_err,[clr mrk],'LineWidth',lwid,'MarkerSize',msiz);
+        xticks(1:4);xticklabels(trial_categories);xlim([0.5 4.5])
+    end
+    hdl(end+1) = h;
+end
+legend(hdl,lbl)
+%%
+cd(wrk_dir);
+load('ermi_precue.mat')
+chan_pair = 'FZ_CZ';
+var_n={};
+
+% anx_cat='low';sc='pre';tt='long';
+% var_n{1} = {anx_cat,sc,tt};
+% anx_cat='mid';sc='pre';tt='short';
+% var_n{2} = {anx_cat,sc,tt};
+% anx_cat='high';sc='post';tt='long';
+% var_n{3} = {anx_cat,sc,tt};
+
+% anx_cat='low';sc='post';tt='long';
 % var_n{1} = {anx_cat,sc,tt};
 % anx_cat='mid';sc='pre';tt='long';
 % var_n{2} = {anx_cat,sc,tt};
 % anx_cat='high';sc='pre';tt='long';
 % var_n{3} = {anx_cat,sc,tt};
-% 
-% % anx_cat='low';sc='pre';tt='long';
-% % var_n{1} = {anx_cat,sc,tt};
-% % anx_cat='mid';sc='pre';tt='short';
-% % var_n{2} = {anx_cat,sc,tt};
-% % anx_cat='high';sc='post';tt='long';
-% % var_n{3} = {anx_cat,sc,tt};
-% 
-% % anx_cat='mid';sc='pre';tt='long';
-% % var_n{1} = {anx_cat,sc,tt};
-% % anx_cat='mid';sc='post';tt='short';
-% % var_n{2} = {anx_cat,sc,tt};
-% % anx_cat='mid';sc='post';tt='long';
-% % var_n{3} = {anx_cat,sc,tt};
-% 
-% num_plot=length(var_n);
-% lwid=2;msiz=8;
-% hdl=[];lbl={};
-% clrs = ['b','g','r'];
-% for idx = 1:num_plot
-%     if idx==1
-%         figure('OuterPosition',[246 131 922 923]);hold on;
-%     end
-%     lbl{end+1} = strjoin(var_n{idx},'-');
-%     for tc = 1:length(trial_categories)
-%         tcat = trial_categories{tc};
-%         y = eval(['mean_ermi.' strjoin(var_n{idx},'.') '.(tcat).(chan_pair).ermi']);
-%         y_t_mean = mean(y,1);
-%         y_t_sub_mean = mean(y,'all');
-%         y_err = std(y_t_mean)/sqrt(length(y_t_mean));
-%         clr=clrs(idx);mrk='o';
-%         h = errorbar(tc,y_t_sub_mean,y_err,[clr mrk],'LineWidth',lwid,'MarkerSize',msiz);
-%         xticks(1:4);xticklabels(trial_categories);xlim([0.5 4.5])
-%     end
-%     hdl(end+1) = h;
-% end
-% legend(hdl,lbl)
+
+anx_cat='low';sc='pre';tt='short';
+var_n{1} = {anx_cat,sc,tt};
+anx_cat='high';sc='post';tt='short';
+var_n{2} = {anx_cat,sc,tt};
+% anx_cat='high';sc='post';tt='short';
+% var_n{3} = {anx_cat,sc,tt};
+
+num_plot=length(var_n);
+lwid=2;msiz=8;
+hdl=[];lbl={};
+clrs = ['b','g','r'];
+for idx = 1:num_plot
+    if idx==1
+        figure('OuterPosition',[246 131 922 923]);hold on;
+    end
+    lbl{end+1} = strjoin(var_n{idx},'-');
+    for tc = 1:length(trial_categories)
+        tcat = trial_categories{tc};
+        y = eval(['mean_ermi.' strjoin(var_n{idx},'.') '.(tcat).(chan_pair).ermi']);
+        y_t_mean = mean(y,1);
+        y_t_sub_mean = mean(y,'all');
+        y_err = std(y_t_mean)/sqrt(length(y_t_mean));
+        clr=clrs(idx);mrk='o';
+        h = errorbar(tc,y_t_sub_mean,y_err,[clr mrk],'LineWidth',lwid,'MarkerSize',msiz);
+        xticks(1:4);xticklabels(trial_categories);xlim([0.5 4.5])
+    end
+    hdl(end+1) = h;
+end
+legend(hdl,lbl)
 %% CHECKING DIFFERENT CHANNELS:
 cd(wrk_dir);
-load('ermi_postcue.mat')
+load('ermi_precue.mat')
 
 a = {'FZ','CZ','T5'};
 [A,B] = meshgrid(a,a);
 c = string(A)+'_'+string(B);
 chan_pairs = char(c(:));
 chan_pairs = chan_pairs([1:5 7 9],:);
+chan_pairs = chan_pairs([2],:);
 
 var_n = chan_pairs;
 
@@ -308,14 +309,16 @@ var_n = chan_pairs;
 
 anx_cat='high';sc='pre';tt='short';
 
-num_plot=length(var_n);
+num_plot=size(var_n,1);
 lwid=2;msiz=8;
 hdl=[];lbl={};
 
 for idx = 1:num_plot
-    if idx==1
-        figure('OuterPosition',[246 131 922 923]);hold on;
-    end
+%     if idx==1
+%         figure('OuterPosition',[246 131 922 923]);hold on;
+%         title(strjoin({anx_cat,sc,tt},'-'))
+        ax=gca; c=ax.ColorOrder;
+%     end
     chan_pairs(idx,strfind(chan_pairs(idx,:),'_')) = '-';
     lbl{end+1} = chan_pairs(idx,:);%strjoin(var_n{idx},'-');
     y_mean = [];
@@ -324,15 +327,16 @@ for idx = 1:num_plot
         y = mean_ermi.(anx_cat).(sc).(tt).(tcat).(var_n(idx,:)).ermi;
         y_t_sub_mean = mean(y,'all');
         y_mean(end+1) = y_t_sub_mean;        
-%         y_t_mean = mean(y,1);
-%         y_err = std(y_t_mean)/sqrt(length(y_t_mean));
-%         h = errorbar(tc,y_t_sub_mean,y_err,'LineWidth',lwid,'MarkerSize',msiz);
+        y_t_mean = mean(y,1);
+        y_err = std(y_t_mean)/sqrt(length(y_t_mean));
+%         h = 
+        errorbar(tc,y_t_sub_mean,y_err,'Color',c(2,:),'LineWidth',lwid,'MarkerSize',msiz);
     end
-    h = plot(1:4,y_mean,'-o','LineWidth',lwid,'MarkerSize',msiz);
+    h = plot(1:4,y_mean,'-o','Color',c(2,:),'LineWidth',lwid,'MarkerSize',msiz);
     xticks(1:4);xticklabels(trial_categories);xlim([0.5 4.5])    
     hdl(end+1) = h;
 end
-legend(hdl,lbl)
+% legend(hdl,lbl)
 %%
 %%% Discuss what to plot: fluctuation around temporal mean (y_sub_err) 
 %%% and across subject variability at each timepoint (y_t_err)
